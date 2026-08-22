@@ -40,10 +40,15 @@ export function dataUrl(): string {
   return (process.env.DATA_URL || 'http://127.0.0.1:8100').replace(/\/+$/, '');
 }
 
+function serviceHeaders(): Record<string, string> {
+  const token = process.env.STAGING_SERVICE_TOKEN?.trim();
+  return token ? { 'x-rockygpt-environment-token': token } : {};
+}
+
 export async function answerQuestion(request: BrainRequest): Promise<BrainAnswer> {
   const response = await fetch(`${brainUrl()}/v1/chat`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-rockygpt-origin': 'bot' },
+    headers: { 'content-type': 'application/json', 'x-rockygpt-origin': 'bot', ...serviceHeaders() },
     body: JSON.stringify({
       ...request,
       now: request.now?.toISOString(),
@@ -90,7 +95,10 @@ export function forgetConversation(scope: { visitorId?: string; conversationId?:
 }
 
 export async function dataGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${dataUrl()}${path}`, { signal: AbortSignal.timeout(15_000) });
+  const response = await fetch(`${dataUrl()}${path}`, {
+    headers: serviceHeaders(),
+    signal: AbortSignal.timeout(15_000),
+  });
   if (!response.ok) throw new Error(`Data service answered ${response.status} for ${path}.`);
   return (await response.json()) as T;
 }
