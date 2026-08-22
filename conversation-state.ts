@@ -4,7 +4,7 @@ import { assertChecks, check } from './suite-utils';
 
 const failures: string[] = [];
 const results = await conversation(
-  ['What are the library hours today?', 'Which closing time did you just give me?'],
+  ['What are the Bradley Center hours today?', 'Which closing time did you just give me?'],
   { conversationId: 'state-hours', visitorId: 'state-visitor', now: new Date('2026-08-20T18:00:00Z') }
 );
 check(failures, 'both turns return an answer', results.every((result) => result.answer.length > 0));
