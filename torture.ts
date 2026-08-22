@@ -29,8 +29,7 @@ import 'dotenv/config';
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { answerQuestion, type BrainAnswer } from '@rockygpt/brain/src/brain';
-import type { ChatTurnV2 } from '@rockygpt/brain/api/contract';
+import { answerQuestion, type BrainAnswer, type ChatTurnV2 } from './client';
 
 /** The browser keeps the last ten messages; the run mirrors that exactly. */
 const MAX_HISTORY_MESSAGES = 10;

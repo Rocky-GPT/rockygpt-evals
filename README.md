@@ -14,6 +14,6 @@ deterministic.
     npm run test:grounding
     npm run test:torture
 
-Suites import the engine directly, so they need the same environment the brain
-does. To run them against a deployed service instead, set `BRAIN_URL` and use
-the client in `@rockygpt/brain/api/client`.
+Suites are black-box clients. Set `BRAIN_URL` and `DATA_URL` to local or
+deployed services; no service source tree, model key, or database credential is
+needed in this repository.
