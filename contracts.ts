@@ -1,11 +1,15 @@
 import 'dotenv/config';
-import { brainUrl, dataUrl } from './client';
+import { brainUrl, dataUrl, serviceHeaders } from './client';
 import { assertChecks, check } from './suite-utils';
 
 const failures: string[] = [];
 
 async function json(url: string, init?: RequestInit): Promise<{ response: Response; body: unknown }> {
-  const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
+  const response = await fetch(url, {
+    ...init,
+    headers: { ...serviceHeaders(), ...init?.headers },
+    signal: AbortSignal.timeout(15_000),
+  });
   let body: unknown;
   try {
     body = await response.json();
