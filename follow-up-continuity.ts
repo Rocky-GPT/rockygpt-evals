@@ -3,7 +3,7 @@ import { assertChecks, check, conversation } from './suite-utils';
 
 const failures: string[] = [];
 const scenarios = [
-  ['What are the library hours Friday?', 'What about Saturday?'],
+  ['What are the Bradley Center hours Friday?', 'What about Saturday?'],
   ['Find the Registrar contact information.', 'Where is that office?'],
   ['Show me upcoming campus events.', 'Tell me about the second one.'],
 ];
