@@ -40,7 +40,7 @@ export function dataUrl(): string {
   return (process.env.DATA_URL || 'http://127.0.0.1:8100').replace(/\/+$/, '');
 }
 
-function serviceHeaders(): Record<string, string> {
+export function serviceHeaders(): Record<string, string> {
   const token = process.env.STAGING_SERVICE_TOKEN?.trim();
   return token ? { 'x-rockygpt-environment-token': token } : {};
 }
