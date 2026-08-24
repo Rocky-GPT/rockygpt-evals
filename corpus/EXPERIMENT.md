@@ -115,6 +115,7 @@ before B runs, for the same reason:
   deterministic primitive was needed. If it stays at 0% while its neighbours
   recover, that is a specific argument for `select_next_departure(records,
   now)` — one function, not an architecture.
+  *(Scored below: it recovered. The primitive is rejected.)*
 - **Ordinal and discourse should move less than transportation.** The repair
   is orthogonal to reference resolution. If they move a lot, the causal model
   is wrong and that matters more than the score.
@@ -186,3 +187,42 @@ State C (restart BRAIN)        ->  75-turn control suite
 
 The third bucket is the only one that justifies writing a reasoning layer. See
 `rockygpt-brain-python/DESIGN.md` §9.2 for the admission rule that governs it.
+
+## Deviation recorded — State C includes a prompt change
+
+The protocol says no prompt changes between states. State C breaks that, and
+the reason is recorded here rather than buried.
+
+The evidence-integrity repair is two-part by construction: the envelope
+declares `returned` and `truncated`, and the consumer is told what those mean.
+Adding the fields alone would be a null intervention — metadata nothing reads
+cannot change an answer — so C would measure nothing and "C showed no effect"
+would be uninterpretable.
+
+C is therefore defined as: **completeness metadata plus the prompt section that
+makes it actionable**, treated as one intervention. It is not separable into
+two measurable halves at this corpus size.
+
+Consequence: a change between B and C cannot be attributed to the metadata
+rather than the wording. Given that state B already returns ≤7 shuttle records
+against a cap of 8, C is expected to show no effect on the transportation
+control suite regardless — the informative C measurement is on hours, where 10
+records still meet a cap of 8.
+
+---
+
+# OUTCOME — the pre-registered expectations, scored
+
+Recorded after the run. See `RESULTS.md` for the full table.
+
+| Expectation | Outcome |
+| --- | --- |
+| B fixes most transportation failures | **Correct.** 15.0% -> 92.5%, nine of eleven scenarios at 100%. |
+| `tx-midday-0` is the test; recovery under B means no primitive was needed | **Recovered, 0% -> 100%.** `select_next_departure()` is rejected. |
+| Ordinal and discourse should move less than transportation | **Half wrong.** Discourse held at 60% exactly as predicted, but ordinal went 50% -> 100% — the repair was *not* orthogonal to it, because ordinal traversal over a mis-ordered list is a different problem from ordinal traversal over a sorted one. |
+| C's marginal gain decides whether the record cap needs changing | **Not answered.** B returned ≤7 records against a cap of 8, so C had nothing to act on. Moved to the hours suite. |
+
+The ordinal miss is the useful one. "The one after that" was never a reference
+resolution failure — it was correctly resolving a reference into a list whose
+order was wrong. A deterministic ordinal primitive would have been built to fix
+a problem that did not exist.
