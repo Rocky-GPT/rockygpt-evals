@@ -83,6 +83,11 @@ function campusInstant(isoDate: string, minutes: number): Date {
 
 const lastOf = <T>(items: T[]): T => items[items.length - 1];
 
+/** A clock time as a literal for `RegExp`, tolerating spacing around AM/PM. */
+function escapeForSearch(time: string): string {
+  return time.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s*');
+}
+
 /** Venues probed for hours. See hoursScenarios for how they are chosen. */
 const MAX_HOURS_VENUES = 6;
 
@@ -371,14 +376,20 @@ export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
         if (!target) return 'unscorable';
         const finalAnswer = lastOf(answers).answer;
         if (!statesTime(finalAnswer, target)) return 'fail';
-        // Also wrong if it swaps in current truth: the departure that is next
-        // at the later clock is a different trip, and naming that instead is
-        // the exact confusion being tested.
+        // The failure is *substitution* — reporting what is true now in place
+        // of what was said. Mentioning both is not that, and an answer like
+        // "I originally told you 12:20 PM; the current schedule now shows
+        // 3:10 PM" is better than what this scenario asked for. What
+        // distinguishes them is order: the spoken value has to lead, because
+        // that is what was asked for.
         const currentNext = nthDeparture(trips, start + 200, 1);
-        if (currentNext && parseClock(currentNext.departure) !== parseClock(target)) {
-          return statesTime(finalAnswer, currentNext.departure) ? 'fail' : 'pass';
-        }
-        return 'pass';
+        if (!currentNext || parseClock(currentNext.departure) === parseClock(target)) return 'pass';
+        const spokenAt = finalAnswer.search(new RegExp(escapeForSearch(target), 'i'));
+        const currentAt = finalAnswer.search(
+          new RegExp(escapeForSearch(currentNext.departure), 'i')
+        );
+        if (currentAt === -1) return 'pass';
+        return spokenAt !== -1 && spokenAt < currentAt ? 'pass' : 'fail';
       },
     },
     {
@@ -534,12 +545,59 @@ export async function mapScenarios(isoDate: string): Promise<Scenario[]> {
   return scenarios;
 }
 
+/**
+ * Tool-schema reliability for `search_events`.
+ *
+ * `search_events` accepts one optional string, `q`, and nothing else. A
+ * question like "what events are happening today?" invites a `date` or `when`
+ * argument that the schema does not declare, and the call is rejected — which
+ * costs a tool slot and, in one traced turn, the whole answer.
+ *
+ * These scenarios are phrased to pull in that direction: dates, time ranges,
+ * counts and categories, plus plain controls that should never tempt an extra
+ * argument. Correctness is graded loosely — the point of measurement here is
+ * the tool-call layer, read from the operator log, not the wording.
+ */
+export async function eventsScenarios(isoDate: string): Promise<Scenario[]> {
+  const now = campusInstant(isoDate, 10 * 60);
+  const asked: Array<[string, string, boolean]> = [
+    ['plain', 'What events are happening?', false],
+    ['today', 'What events are happening today?', true],
+    ['tonight', 'Are there any events tonight?', true],
+    ['this-week', 'What events are on this week?', true],
+    ['weekend', 'Any events this weekend?', true],
+    ['count', 'List three events coming up.', true],
+    ['category', 'Are there any music events?', false],
+    ['tomorrow', 'What events are happening tomorrow?', true],
+  ];
+
+  return asked.map(([slug, question, temptsExtraArgs]) => ({
+    id: `events-${slug}`,
+    category: 'events',
+    tier: 'broad' as Tier,
+    messages: [question],
+    now,
+    groundingExpected: true,
+    expected: `answers without the tool call being rejected${temptsExtraArgs ? ' (phrasing invites an undeclared argument)' : ''}`,
+    grade: ([answer]: GradedAnswer[]): Outcome => {
+      // Loose on purpose. A rejected tool call shows up in the operator log,
+      // and an answer that fell back shows up here; grading event *content*
+      // would measure the events dataset rather than the tool contract.
+      if (/wasn't able to put together a reliable/.test(answer.answer)) return 'fail';
+      return answer.route === 'standard' || /no .*events|nothing .*scheduled/i.test(answer.answer)
+        ? 'pass'
+        : 'fail';
+    },
+  }));
+}
+
 export async function buildCorpus(isoDate: string): Promise<Scenario[]> {
-  const [transportation, hours, map, discourse] = await Promise.all([
+  const [transportation, hours, map, discourse, events] = await Promise.all([
     transportationScenarios(isoDate),
     hoursScenarios(isoDate),
     mapScenarios(isoDate),
     discourseScenarios(isoDate),
+    eventsScenarios(isoDate),
   ]);
-  return [...transportation, ...hours, ...map, ...discourse];
+  return [...transportation, ...hours, ...map, ...discourse, ...events];
 }
