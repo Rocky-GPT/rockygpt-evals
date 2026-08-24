@@ -33,11 +33,22 @@ export interface GradedAnswer {
   answer: string;
   route: string;
   citations: number;
+  uiActions: Array<{ type: string; payload?: Record<string, string> }>;
 }
+
+/**
+ * How many repetitions a scenario earns.
+ *
+ * `critical` cases are the ones whose consistency is itself a finding —
+ * deterministic selection, boundaries, discourse recall. `broad` cases
+ * establish behaviour, and a third run buys far less than it costs.
+ */
+export type Tier = 'critical' | 'broad';
 
 export interface Scenario {
   id: string;
   category: string;
+  tier: Tier;
   messages: string[];
   now: Date;
   /** True when a correct answer must rest on campus evidence. */
@@ -64,6 +75,13 @@ function campusInstant(isoDate: string, minutes: number): Date {
 
 const lastOf = <T>(items: T[]): T => items[items.length - 1];
 
+/** Venues probed for hours. See hoursScenarios for how they are chosen. */
+const MAX_HOURS_VENUES = 6;
+
+/** Mirrors rockygpt-brain-python brain/tools.py MAX_RECORDS_PER_CALL, so the
+ *  corpus can deliberately include venues the tool boundary hides. */
+const BRAIN_RECORD_CAP = 8;
+
 export async function transportationScenarios(isoDate: string): Promise<Scenario[]> {
   const probe = campusInstant(isoDate, 12 * 60);
   const serviceDay = serviceDayFor(probe);
@@ -86,6 +104,7 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
       scenarios.push({
         id,
         category: 'transportation',
+        tier: 'critical',
         messages: ['When is the next shuttle?'],
         now,
         groundingExpected: true,
@@ -101,6 +120,7 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
     scenarios.push({
       id,
       category: 'transportation',
+      tier: 'critical',
       messages: ['When is the next shuttle?'],
       now,
       groundingExpected: true,
@@ -132,6 +152,7 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
     scenarios.push({
       id: 'tx-ordinal-next',
       category: 'ordinal',
+      tier: 'critical',
       messages: ['When is the next shuttle?', 'What about the one after that?'],
       now: campusInstant(isoDate, ordinalFrom),
       groundingExpected: true,
@@ -141,6 +162,7 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
     scenarios.push({
       id: 'tx-ordinal-miss-phrasing',
       category: 'ordinal',
+      tier: 'critical',
       messages: ['When is the next shuttle?', "If I miss that one, what's my next chance?"],
       now: campusInstant(isoDate, ordinalFrom),
       groundingExpected: true,
@@ -155,6 +177,7 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
     scenarios.push({
       id: 'tx-recall-spoken',
       category: 'discourse',
+      tier: 'critical',
       messages: [
         'When is the next shuttle?',
         'What is on the menu for lunch?',
@@ -184,9 +207,22 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
     `/v1/search/campus-hours?day=${encodeURIComponent(day)}`
   );
 
+  // Every venue would be 10 x 5 probes, and most of them are the same
+  // single-window arithmetic. Keep the ones that carry signal the others do
+  // not: a venue publishing two windows is the only way to probe the gap
+  // between them, and a venue past the tool's record cap is the only way to
+  // see an availability failure. Fill the remainder in published order.
+  const scored = records
+    .map((record, index) => ({ record, index, windows: parseSchedule(record.schedule) }))
+    .filter((entry) => entry.windows !== null && entry.windows.length > 0);
+  const priority = (entry: (typeof scored)[number]) =>
+    (entry.windows!.length > 1 ? 0 : 1) + (entry.index >= BRAIN_RECORD_CAP ? 0 : 1);
+  const chosen = [...scored]
+    .sort((left, right) => priority(left) - priority(right) || left.index - right.index)
+    .slice(0, MAX_HOURS_VENUES);
+
   const scenarios: Scenario[] = [];
-  for (const record of records) {
-    const windows = parseSchedule(record.schedule);
+  for (const { record, windows } of chosen.sort((a, b) => a.index - b.index)) {
     if (!windows || windows.length === 0) continue;
     const [first] = windows;
     const probes: Array<[string, number, string]> = [
@@ -209,6 +245,10 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
       scenarios.push({
         id: `hours-${slug}-${suffix}`,
         category: 'hours',
+        // The mid-window probe is a control that should never be close; the
+        // boundaries and the between-windows gap are the cases the arithmetic
+        // actually turns on.
+        tier: suffix === 'mid-open' ? 'broad' : 'critical',
         messages: [`Is ${record.name} open right now?`],
         now: campusInstant(isoDate, minutes),
         groundingExpected: true,
@@ -224,10 +264,87 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
   return scenarios;
 }
 
+interface MapResponse {
+  locations: Array<{ key: string; name: string; aliases?: string[] }>;
+  resolved?: { key: string; name: string } | null;
+}
+
+/**
+ * Entity resolution and location retrieval.
+ *
+ * Graded two ways against the same oracle. The text check asks whether the
+ * answer names the location the data service itself resolves the query to. The
+ * action check asks whether the VIEW_MAP payload carries that location's `key`
+ * — a structured signal the model cannot satisfy by paraphrase, and the one the
+ * UI actually uses to open the map panel.
+ */
+export async function mapScenarios(isoDate: string): Promise<Scenario[]> {
+  const queries = [
+    'Birch Tree Inn',
+    'the CSI office',
+    'academic building A',
+    'the Bradley Center',
+    'the bookstore',
+    'health services',
+    'financial aid',
+    'the Sharp Fitness Center',
+    'the Anisfield School of Business',
+  ];
+  const now = campusInstant(isoDate, 13 * 60);
+  const scenarios: Scenario[] = [];
+
+  for (const query of queries) {
+    const map = await dataGet<MapResponse>(`/v1/map?q=${encodeURIComponent(query)}`);
+    const resolved = map.resolved;
+    if (!resolved) continue;
+    const slug = query.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28);
+
+    scenarios.push({
+      id: `map-name-${slug}`,
+      category: 'map',
+      tier: 'broad',
+      messages: [`Where is ${query}?`],
+      now,
+      groundingExpected: true,
+      expected: `names "${resolved.name}"`,
+      grade: ([answer]) => {
+        // Match on the distinctive words of the resolved name rather than the
+        // whole string: the published name often carries a parenthetical or a
+        // suffix ("Restaurant", "(CSI)") that a natural answer drops.
+        const words = resolved.name
+          .toLowerCase()
+          .replace(/[()]/g, ' ')
+          .split(/\s+/)
+          .filter((word) => word.length > 3 && !['the', 'and', 'for'].includes(word));
+        if (words.length === 0) return 'unscorable';
+        const text = answer.answer.toLowerCase();
+        return words.some((word) => text.includes(word)) ? 'pass' : 'fail';
+      },
+    });
+
+    scenarios.push({
+      id: `map-action-${slug}`,
+      category: 'map-action',
+      tier: 'broad',
+      messages: [`Where is ${query}?`],
+      now,
+      groundingExpected: true,
+      expected: `VIEW_MAP payload locationKey="${resolved.key}"`,
+      grade: ([answer]) => {
+        const action = answer.uiActions.find((entry) => entry.type === 'VIEW_MAP');
+        if (!action) return 'fail';
+        return action.payload?.locationKey === resolved.key ? 'pass' : 'fail';
+      },
+    });
+  }
+  return scenarios;
+}
+
 export async function buildCorpus(isoDate: string): Promise<Scenario[]> {
-  const [transportation, hours] = await Promise.all([
+  const [transportation, hours, map] = await Promise.all([
     transportationScenarios(isoDate),
     hoursScenarios(isoDate),
+    mapScenarios(isoDate),
   ]);
-  return [...transportation, ...hours];
+  return [...transportation, ...hours, ...map];
 }
