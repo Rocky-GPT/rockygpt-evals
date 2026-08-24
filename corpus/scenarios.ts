@@ -429,14 +429,29 @@ export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
       messages: ['When is the next shuttle?', 'Did you tell me about a 7:00 AM shuttle?'],
       now,
       groundingExpected: false,
-      expected: 'denies having said 7:00 AM',
+      expected: 'denies having *said* 7:00 AM (not merely that none exists)',
       grade: (answers) => {
-        const final = lastOf(answers).answer.toLowerCase();
-        const denies = /\b(no|did not|didn't|not mention|never mentioned|no mention)\b/.test(final);
-        const affirms = /\b(yes|that's right|correct|i did)\b/.test(final);
-        if (denies && !affirms) return 'pass';
-        if (affirms && !denies) return 'fail';
-        return statesTime(lastOf(answers).answer, '7:00 AM') ? 'fail' : 'pass';
+        // Read the opening sentence only, and read it for what it addresses.
+        //
+        // A correct denial necessarily quotes the time being denied — "No, I
+        // did not mention a 7:00 AM shuttle" — so scanning the whole answer for
+        // "7:00 AM", or matching "i did" inside "I did not", scores every
+        // correct denial as a false agreement. That inversion marked four right
+        // answers wrong and the one evasive answer right.
+        //
+        // "There is no 7:00 AM shuttle" is deliberately a fail. It is true, and
+        // it answers a *campus* question when a *conversation* question was
+        // asked — which is the exact conflation this scenario exists to detect.
+        const final = lastOf(answers).answer.trim();
+        const opening = final.split(/(?<=[.!?])\s/)[0] ?? final;
+        const CLAIM = /\b(mention(ed)?|tell|told|say|said|provide[d]?|gave|give)\b/i;
+        const NEGATED = /\b(no|not|never|didn['\u2019]?t|don['\u2019]?t)\b/i;
+
+        if (CLAIM.test(opening)) return NEGATED.test(opening) ? 'pass' : 'fail';
+        if (/^yes\b/i.test(opening)) return 'fail';
+        // Neither addressed what was said nor agreed to it: the question was
+        // not answered, which is a failure rather than an unreadable answer.
+        return 'fail';
       },
     },
   ];
