@@ -51,6 +51,14 @@ export interface Scenario {
   tier: Tier;
   messages: string[];
   now: Date;
+  /**
+   * Minutes to advance the clock for each message, parallel to `messages`.
+   *
+   * Conversation truth cannot be tested without it: proving Rocky reports what
+   * it *said* rather than what is true *now* requires the two to differ, which
+   * means time has to pass mid-conversation.
+   */
+  nowOffsets?: number[];
   /** True when a correct answer must rest on campus evidence. */
   groundingExpected: boolean;
   expected: string;
@@ -255,12 +263,183 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
         expected: `${truth ? 'open' : 'closed'} (${label}; ${record.schedule})`,
         grade: ([answer]) => {
           const stated = statesOpen(answer.answer);
-          if (stated === null) return 'fail';
+          // An answer the grader cannot read is a limit of the grader, not a
+          // wrong answer. Scoring it `fail` once turned a set of entirely
+          // correct replies into a 0% category.
+          if (stated === null) return 'unscorable';
           return stated === truth ? 'pass' : 'fail';
         },
       });
     }
   }
+  return scenarios;
+}
+
+/**
+ * Discourse: what Rocky said, as distinct from what is true.
+ *
+ * The evidence ledger answers "what does official data support". It cannot
+ * answer "what did you tell me", and the difference is the whole category. A
+ * timetable row proves 2:05 PM is a real departure; only a record of the
+ * conversation proves 2:05 PM is the departure this student was given.
+ *
+ * Every scenario here is graded against **turn one's own text**, not against
+ * the data. If turn one was wrong, a faithful recall repeats the wrong time,
+ * and that passes. Conflating the two is the failure mode being measured.
+ */
+export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
+  const probe = campusInstant(isoDate, 12 * 60);
+  const serviceDay = serviceDayFor(probe);
+  const { records: trips } = await dataGet<SearchResponse<ShuttleTrip>>(
+    `/v1/search/shuttles?serviceDay=${serviceDay}`
+  );
+  const times = trips
+    .map((trip) => parseClock(trip.departure))
+    .filter((value): value is number => value !== null)
+    .sort((a, b) => a - b);
+  if (times.length < 5) return [];
+
+  // Start mid-morning so several departures remain, and so advancing the clock
+  // later in a conversation genuinely changes what "next" means.
+  const start = times[1] + 5;
+  const now = campusInstant(isoDate, start);
+  const first = nthDeparture(trips, start, 1);
+  const second = nthDeparture(trips, start, 2);
+  if (!first || !second) return [];
+
+  /** The first clock time turn one actually stated, whatever it was. */
+  const spokenTime = (answers: GradedAnswer[]): string | null =>
+    /(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?/i.exec(answers[0]?.answer ?? '')?.[0] ?? null;
+
+  const recallsTurnOne = (answers: GradedAnswer[]): Outcome => {
+    const target = spokenTime(answers);
+    if (!target) return 'unscorable';
+    return statesTime(lastOf(answers).answer, target) ? 'pass' : 'fail';
+  };
+
+  const filler = [
+    'What is on the menu for lunch?',
+    'What clubs can I join?',
+    'Where is the library?',
+    'When is spring break?',
+    'What events are happening today?',
+  ];
+
+  const scenarios: Scenario[] = [
+    {
+      id: 'dsc-immediate-recall',
+      category: 'discourse',
+      tier: 'critical',
+      messages: ['When is the next shuttle?', 'What time did you say?'],
+      now,
+      groundingExpected: false,
+      expected: 'repeats the time stated in turn 1',
+      grade: recallsTurnOne,
+    },
+    {
+      id: 'dsc-topic-shift-recall',
+      category: 'discourse',
+      tier: 'critical',
+      messages: [
+        'When is the next shuttle?',
+        ...filler,
+        'What was that shuttle time you told me about earlier?',
+      ],
+      now,
+      groundingExpected: false,
+      expected: 'repeats turn 1 across five intervening topics',
+      grade: recallsTurnOne,
+    },
+    {
+      id: 'dsc-conversation-truth',
+      category: 'discourse',
+      tier: 'critical',
+      // The clock advances past the departure turn one named, so the current
+      // answer and the spoken answer necessarily differ. This is the case the
+      // whole category exists for.
+      messages: [
+        'When is the next shuttle?',
+        'What is on the menu for lunch?',
+        'What time did you tell me that shuttle was?',
+      ],
+      now,
+      nowOffsets: [0, 200, 200],
+      groundingExpected: false,
+      expected: 'reports turn 1\'s time, not the departure that is next 200 minutes later',
+      grade: (answers) => {
+        const target = spokenTime(answers);
+        if (!target) return 'unscorable';
+        const finalAnswer = lastOf(answers).answer;
+        if (!statesTime(finalAnswer, target)) return 'fail';
+        // Also wrong if it swaps in current truth: the departure that is next
+        // at the later clock is a different trip, and naming that instead is
+        // the exact confusion being tested.
+        const currentNext = nthDeparture(trips, start + 200, 1);
+        if (currentNext && parseClock(currentNext.departure) !== parseClock(target)) {
+          return statesTime(finalAnswer, currentNext.departure) ? 'fail' : 'pass';
+        }
+        return 'pass';
+      },
+    },
+    {
+      id: 'dsc-ordinal-first',
+      category: 'discourse',
+      tier: 'critical',
+      messages: ['What are the next two shuttle departures?', 'What was the first one you listed?'],
+      now,
+      groundingExpected: false,
+      expected: `${first.departure} (first of the two given)`,
+      grade: (answers) => (statesTime(lastOf(answers).answer, first.departure) ? 'pass' : 'fail'),
+    },
+    {
+      id: 'dsc-ordinal-previous',
+      category: 'discourse',
+      tier: 'critical',
+      messages: [
+        'When is the next shuttle?',
+        'What about the one after that?',
+        'And the one before that?',
+      ],
+      now,
+      groundingExpected: false,
+      expected: `${first.departure} (stepping back to the originally given trip)`,
+      grade: (answers) => (statesTime(lastOf(answers).answer, first.departure) ? 'pass' : 'fail'),
+    },
+    {
+      id: 'dsc-entity-focus',
+      category: 'discourse',
+      tier: 'critical',
+      messages: ['When is the next shuttle?', 'Is the Bradley Center open before that?'],
+      now,
+      groundingExpected: true,
+      expected: 'answers about the Bradley Center, resolving "that" to the shuttle time',
+      grade: (answers) => {
+        const final = lastOf(answers).answer.toLowerCase();
+        if (!final.includes('bradley')) return 'fail';
+        return statesOpen(lastOf(answers).answer) === null ? 'unscorable' : 'pass';
+      },
+    },
+    {
+      id: 'dsc-false-claim-recall',
+      category: 'discourse',
+      tier: 'critical',
+      // Rocky never mentioned 7:00 AM. Agreeing that it did is the failure the
+      // TypeScript discourse record was built to prevent: a row existing in the
+      // data is not proof that it was ever said.
+      messages: ['When is the next shuttle?', 'Did you tell me about a 7:00 AM shuttle?'],
+      now,
+      groundingExpected: false,
+      expected: 'denies having said 7:00 AM',
+      grade: (answers) => {
+        const final = lastOf(answers).answer.toLowerCase();
+        const denies = /\b(no|did not|didn't|not mention|never mentioned|no mention)\b/.test(final);
+        const affirms = /\b(yes|that's right|correct|i did)\b/.test(final);
+        if (denies && !affirms) return 'pass';
+        if (affirms && !denies) return 'fail';
+        return statesTime(lastOf(answers).answer, '7:00 AM') ? 'fail' : 'pass';
+      },
+    },
+  ];
   return scenarios;
 }
 
@@ -341,10 +520,11 @@ export async function mapScenarios(isoDate: string): Promise<Scenario[]> {
 }
 
 export async function buildCorpus(isoDate: string): Promise<Scenario[]> {
-  const [transportation, hours, map] = await Promise.all([
+  const [transportation, hours, map, discourse] = await Promise.all([
     transportationScenarios(isoDate),
     hoursScenarios(isoDate),
     mapScenarios(isoDate),
+    discourseScenarios(isoDate),
   ]);
-  return [...transportation, ...hours, ...map];
+  return [...transportation, ...hours, ...map, ...discourse];
 }

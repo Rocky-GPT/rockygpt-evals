@@ -36,10 +36,27 @@ const ONLY = process.env.CORPUS_ONLY;
  *  to death at ~10 turns/minute sustained; the brain's own limiter then
  *  compounded it. Slower and complete beats fast and void. */
 const TURN_DELAY_MS = Number(process.env.CORPUS_DELAY_MS || 1_500);
-/** A run this contaminated is not a measurement; it aborts instead. */
-const MAX_UNSCORABLE_SHARE = 0.1;
+/** A run this contaminated by *transport* failure is not a measurement; it
+ *  aborts instead. Answers the grader merely could not read are a separate
+ *  thing — they are a finding about the answers, or about the grader, and
+ *  neither is a reason to discard a completed run. Conflating the two aborted
+ *  a valid discourse run at 15% unreadable. */
+const MAX_TRANSPORT_FAILURE_SHARE = 0.1;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Mirrors the browser: it keeps only the most recent entries, walking backwards
+ * (rockygpt-ui/app/page.tsx `buildRequestHistory`), and the brain rejects more
+ * than this with a 400. Sending the full transcript measured a request
+ * production never makes — and made a long conversation look like a provider
+ * failure.
+ *
+ * The cap is the finding, not the workaround: conversation memory is a sliding
+ * window of ten raw turn entries, so anything older than five exchanges is not
+ * in the request at all.
+ */
+const MAX_HISTORY_ENTRIES = 10;
 
 interface ScenarioResult {
   id: string;
@@ -50,6 +67,10 @@ interface ScenarioResult {
   degraded: boolean;
   /** Too few repetitions survived for the score to mean anything. */
   invalid: boolean;
+  /** Runs lost to an HTTP or provider failure. */
+  transportFailures: number;
+  /** Runs whose answer the grader could not read. Not a transport problem. */
+  unreadable: number;
   expected: string;
   outcomes: Outcome[];
   routes: string[][];
@@ -59,16 +80,20 @@ interface ScenarioResult {
   groundedRate: number;
   scorableRuns: number;
   samples: string[];
+  /** Every answer from every repetition, so a grader fix can be applied to a
+   *  completed run offline instead of costing another one. */
+  transcripts: Array<{ outcome: Outcome; answers: string[]; routes: string[] }>;
 }
 
 async function runOnce(scenario: Scenario, run: number): Promise<GradedAnswer[]> {
   const history: ChatTurnV2[] = [];
   const answers: GradedAnswer[] = [];
-  for (const message of scenario.messages) {
+  for (const [index, message] of scenario.messages.entries()) {
+    const offset = scenario.nowOffsets?.[index] ?? 0;
     const result = await answerQuestion({
       message,
-      history: [...history],
-      now: scenario.now,
+      history: history.slice(-MAX_HISTORY_ENTRIES),
+      now: offset ? new Date(scenario.now.getTime() + offset * 60_000) : scenario.now,
       // The browser sends this on every real request
       // (rockygpt-ui/app/page.tsx: Intl.DateTimeFormat().resolvedOptions()).
       // Omitting it here measured a path production never takes: with no
@@ -99,7 +124,9 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
   const outcomes: Outcome[] = [];
   const routes: string[][] = [];
   const samples: string[] = [];
+  const transcripts: ScenarioResult['transcripts'] = [];
   let grounded = 0;
+  let transportFailures = 0;
 
   for (let run = 0; run < repetitions; run += 1) {
     let answers: GradedAnswer[];
@@ -109,6 +136,8 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
       outcomes.push('unscorable');
       routes.push(['error']);
       samples.push(String(error));
+      transportFailures += 1;
+      transcripts.push({ outcome: 'unscorable', answers: [String(error)], routes: ['error'] });
       continue;
     }
     // A provider outage is not a wrong answer. client.ts turns a non-OK
@@ -116,11 +145,16 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
     // the grader reads "The model provider is unavailable." as an answer that
     // simply lacks the expected value and scores it `fail` — making an outage
     // indistinguishable from a brain that gets everything wrong.
-    const outcome: Outcome = answers.some((entry) => entry.route === 'error')
-      ? 'unscorable'
-      : scenario.grade(answers);
+    const transportFailed = answers.some((entry) => entry.route === 'error');
+    if (transportFailed) transportFailures += 1;
+    const outcome: Outcome = transportFailed ? 'unscorable' : scenario.grade(answers);
     outcomes.push(outcome);
     routes.push(answers.map((entry) => entry.route));
+    transcripts.push({
+      outcome,
+      answers: answers.map((entry) => entry.answer),
+      routes: answers.map((entry) => entry.route),
+    });
     const final = answers[answers.length - 1];
     if (final.route === 'standard' && final.citations > 0) grounded += 1;
     if (outcome !== 'pass' && samples.length < 2) samples.push(final.answer.slice(0, 300));
@@ -135,6 +169,8 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
   return {
     tier: scenario.tier,
     repetitions,
+    transportFailures,
+    unreadable: outcomes.filter((outcome) => outcome === 'unscorable').length - transportFailures,
     degraded: scorable.length === repetitions - 1,
     invalid,
     scorableRuns: invalid ? 0 : scorable.length,
@@ -148,6 +184,7 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
     groundingExpected: scenario.groundingExpected,
     groundedRate: grounded / repetitions,
     samples,
+    transcripts,
   };
 }
 
@@ -226,18 +263,22 @@ for (const scenario of selected) {
 }
 
 const totalRuns = results.reduce((sum, row) => sum + row.repetitions, 0);
-const unscorableRuns = results.reduce(
-  (sum, row) => sum + (row.repetitions - row.scorableRuns),
-  0
-);
-const unscorableShare = unscorableRuns / (totalRuns || 1);
-if (unscorableShare > MAX_UNSCORABLE_SHARE) {
+const transportFailures = results.reduce((sum, row) => sum + row.transportFailures, 0);
+const unreadable = results.reduce((sum, row) => sum + row.unreadable, 0);
+const transportShare = transportFailures / (totalRuns || 1);
+if (transportShare > MAX_TRANSPORT_FAILURE_SHARE) {
   console.error(
-    `\nABORTED — ${unscorableRuns}/${totalRuns} runs were unscorable ` +
-      `(${(unscorableShare * 100).toFixed(1)}%, threshold ${MAX_UNSCORABLE_SHARE * 100}%). ` +
+    `\nABORTED — ${transportFailures}/${totalRuns} runs failed in transport ` +
+      `(${(transportShare * 100).toFixed(1)}%, threshold ${MAX_TRANSPORT_FAILURE_SHARE * 100}%). ` +
       `This is a provider or service failure, not a measurement. Nothing written.`
   );
   process.exit(1);
+}
+if (unreadable) {
+  console.log(
+    `\nNOTE — ${unreadable}/${totalRuns} answers could not be read by their grader. ` +
+      `Excluded from scores, kept in transcripts. Review before trusting the numbers.`
+  );
 }
 
 report(results);

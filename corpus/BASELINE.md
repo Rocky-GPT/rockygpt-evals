@@ -160,20 +160,109 @@ always recovers the record, so the model has a reliable escape it does not
 always take. For shuttles, 2 of 10 scenarios were unrecoverable under *any*
 argument choice, because time filtering did not exist at all.
 
-## Deterministic-selection candidates
+## Deterministic-selection candidates — RESOLVED for transportation
 
-Recorded as candidates, not decisions. A candidate is promoted only if it
-survives the A -> B -> C repair sequence — that is, if it still fails once the
-correct evidence is reliably reaching the model.
+Superseded by the A -> B -> C experiment (`RESULTS.md`). Kept for provenance.
 
-| Capability | Status | Evidence |
+| Capability | Status | Outcome |
 | --- | --- | --- |
-| `NEXT_DEPARTURE` | **Candidate** | `tx-midday-0`: correct record visible under both call shapes, wrong answer 5/5. The only baseline transportation failure not explained by evidence availability. |
-| `OPEN_NOW` | Pending | Hours baseline in flight. Two venues are availability-blocked; the rest will show whether interval arithmetic itself fails. |
-| `ORDINAL_SELECT` | Pending | 40-60% at baseline, but availability was conditional on an unobservable tool argument. The argument-key diagnostic resolves this in states B and C. |
+| `NEXT_DEPARTURE` | **REJECTED** | `tx-midday-0`, the pre-registered test, went 0% -> 100% under a DATA-contract repair alone. No brain logic was needed. |
+| `ORDINAL_SELECT` | **REJECTED** | 50% -> 100% at state B with no brain change. |
+| `OPEN_NOW` | Under test | Hours state B measures whether the same upstream pattern holds. |
 
-The test for promotion is deliberately strict: if state B fixes a scenario, the
-failure was a contract defect and no deterministic primitive was needed. If
-`tx-midday-0` remains at 0% after B while its neighbours recover, that is a
-specific argument for one function — `select_next_departure(records, now)` —
-and not for an architecture.
+The candidate table was built on a diagnostic that tested whether the correct
+record was *present* in the model-visible evidence. It was, and the answer was
+still wrong — which looked like proof of a reasoning failure. It was not: the
+records were present but unsorted and mixed with distractors from two other
+service days. Presence is not sufficiency.
+
+---
+
+# State A complete — hours and map
+
+Recorded 2026-08-24, k=5 critical / k=3 broad, campus timezone sent, provider
+healthy throughout. 0 error routes, 0 invalid scenarios in either run.
+Frozen: `FROZEN-results-baseline-hours.json`, `FROZEN-results-baseline-map.json`.
+
+| Category | Scored | Predicted | Consistency |
+| --- | ---: | ---: | ---: |
+| Hours | 49.9% | 86% | 65% |
+| Map / entity (name) | 100.0% | 82% | 100% |
+| Map / entity (action key) | 100.0% | 82% | 100% |
+
+Grounding recall 100% in both.
+
+## Map: no defect found
+
+Verified against the standing instrumentation rule before interpreting: 0 error
+routes, all `standard`, none invalid. `map-action` demands an exact
+`locationKey` string match against the data service's own resolved key, across
+27 runs — a lenient grader cannot produce that.
+
+Entity resolution and location retrieval work. This was the highest-volume
+category in the observed client traffic, and it is 18 points *above* prediction
+rather than below. Nothing here argues for architectural change.
+
+## Hours: a temporal-reasoning failure, not an availability failure
+
+The two signals point in opposite directions, which is what makes this
+conclusive.
+
+**By venue — flat.** The two venues hidden past the tool's record cap score
+45.3% and 56.0%, inside the range of the four fully visible ones (24.0-63.3%).
+Availability is not the explanation; the model narrows with `q` often enough to
+reach them.
+
+**By probe type — a cliff.**
+
+| Probe | Score |
+| --- | ---: |
+| at-open | 96.7% |
+| mid-open | 77.8% |
+| before-open | 63.3% |
+| gap (between two windows) | 20.0% |
+| after-close | 10.0% |
+| **at-close** | **6.7%** |
+
+Rocky reliably knows a venue is open when it is plainly open, and fails almost
+completely at and after closing. `at-close` at 6.7% means it treats a window's
+end as inclusive: asked at exactly the closing minute, it says "open".
+
+This reproduces `schedule.ts`'s recorded observation directly — "called a gym
+open at 10:30 while listing the two windows that exclude 10:30" — which the
+`gap` probe measures at 20%. That claim moves from HISTORICAL to **MEASURED**.
+
+## Why this is a stronger primitive candidate than next-departure
+
+Unlike transportation: evidence availability is ruled out by the flat venue
+distribution, grounding recall is 100% so the right schedule *was* retrieved,
+and the failure concentrates in one identifiable operation — interval
+containment at boundaries.
+
+**But the admission rule (DESIGN.md §9.2) says repair upstream first.** The
+data service returns `schedule` as a prose string (`"8:00am-9:30am and
+11:30am-12:30pm"`) with no computed status, so the model is doing string
+parsing plus clock comparison unaided. There is an upstream repair available
+that is exactly parallel to the shuttle `at` defect: have the hours endpoint
+compute `openNow` / `opensAt` / `closesAt` against the pinned `at` it already
+accepts.
+
+That repair must be measured before any BRAIN primitive is written. Hours now
+has its own A → B experiment, and it is a better-posed one than transportation's
+because availability has already been eliminated as a confound.
+
+## Note on `availability-baseline.json`
+
+The State A shuttle availability JSON was overwritten by a State B capture run
+without `AVAILABILITY_LABEL` set, and renamed to `availability-state-b.json`.
+The State A raw file is gone.
+
+Nothing analytical is lost: the complete State A table — all ten scenarios with
+expected departure, records returned, records visible, and presence under both
+call shapes — is transcribed in the "Evidence-availability diagnostic" section
+above, captured before any repair. It has deliberately **not** been
+reconstructed into a JSON file, because a regenerated file would claim a
+provenance it does not have.
+
+`availability-hours-baseline.json` was unaffected and remains a genuine State A
+capture.

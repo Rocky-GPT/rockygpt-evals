@@ -147,14 +147,82 @@ export function timesStated(answer: string): number[] {
 }
 
 /**
- * Polarity of an open/closed answer. Returns null when the answer commits to
- * neither, which is scored as a miss rather than guessed at.
+ * What an answer asserts about a venue's status *right now*.
+ *
+ * Three things fight each other in real answers, and all three have to be
+ * handled or correct replies get scored wrong:
+ *
+ *   negation      "is not open right now"          -> closed
+ *   word order    "is not currently open"          -> closed
+ *   schedule vs status
+ *     "is open today from 6:00pm to 9:00pm, but right now it is after
+ *      closing"                                    -> closed
+ *
+ * The rule: an assertion carrying a currentness marker ("currently", "right
+ * now", "at the moment") is the status claim wherever it sits, and any
+ * negation attached to it flips the polarity. Only when no currentness marker
+ * exists anywhere does the first copula-linked status word count, and then only
+ * if it is not introducing a time range — "is open from 9:00 AM to 5:00 PM"
+ * describes a schedule, not this moment.
+ *
+ * Returns null when nothing readable is found. Callers must treat that as
+ * unscorable, not as a wrong answer: a phrasing this cannot read is a limit of
+ * this function, and a run full of them should abort the suite rather than
+ * quietly report a low score.
  */
-export function statesOpen(answer: string): boolean | null {
-  const text = answer.toLowerCase();
-  const closed = /\b(is|are|it's|its|currently|now)?\s*(closed|not open)\b/.test(text) || /\bclosed\b/.test(text);
-  const open = /\b(is|are|it's|its|currently|now)?\s*open\b/.test(text) && !/\bnot open\b/.test(text);
-  if (open && !closed) return true;
-  if (closed && !open) return false;
+/**
+ * Currentness markers. "today" is deliberately absent: "is open today from
+ * 6:00pm to 9:00pm" is a schedule clause, not a claim about this moment, and
+ * treating it as one reads those answers backwards.
+ */
+const NOW_MARKER = String.raw`currently|right\s+now|now|at\s+the\s+moment|presently|at\s+this\s+time`;
+const COPULA = String.raw`is|are|'s|it's|its|remains?|stays?|will\s+be`;
+const NEG = String.raw`not|no\s+longer`;
+/** A status word followed by one of these is describing a schedule. */
+const RANGE_LEAD = /^\s*(from|until|till|to|between|on|today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i;
+
+/** Contractions expanded so one negation form has to be handled, not six. */
+function normalize(answer: string): string {
+  return answer
+    .replace(/\bisn['’]t\b/gi, 'is not')
+    .replace(/\baren['’]t\b/gi, 'are not')
+    .replace(/\bwon['’]t\s+be\b/gi, 'will not be')
+    .replace(/\bdoesn['’]t\s+(?:seem\s+to\s+)?be\b/gi, 'is not');
+}
+
+export function statesOpen(rawAnswer: string): boolean | null {
+  const answer = normalize(rawAnswer);
+  const polarity = (word: string, negated: unknown) =>
+    (word.toLowerCase() === 'open') !== Boolean(negated);
+
+  // "Currently, they are closed" — marker leads, subject and copula follow.
+  const leading = new RegExp(
+    String.raw`\b(?:${NOW_MARKER})\b[,\s]+(?:\w+\s+){0,2}?(?:${COPULA})\s+(${NEG})?\s*(open|closed)\b`,
+    'i'
+  ).exec(answer);
+  if (leading) return polarity(leading[2], leading[1]);
+
+  // "is currently closed", "is not currently open", "is currently not open".
+  const middle = new RegExp(
+    String.raw`\b(?:${COPULA})\s+(${NEG})?\s*(?:${NOW_MARKER})\s+(${NEG})?\s*(open|closed)\b`,
+    'i'
+  ).exec(answer);
+  if (middle) return polarity(middle[3], middle[1] || middle[2]);
+
+  // "is not open right now", "is closed at the moment".
+  const trailing = new RegExp(
+    String.raw`\b(?:${COPULA})\s+(${NEG})?\s*(open|closed)\s+(?:${NOW_MARKER})\b`,
+    'i'
+  ).exec(answer);
+  if (trailing) return polarity(trailing[2], trailing[1]);
+
+  // No currentness marker anywhere: first copula-linked status word that is not
+  // introducing a schedule.
+  for (const match of answer.matchAll(
+    new RegExp(String.raw`\b(?:${COPULA})\s+(${NEG})?\s*(open|closed)\b(.{0,14})`, 'gi')
+  )) {
+    if (RANGE_LEAD.test(match[3] ?? '')) continue;
+    return polarity(match[2], match[1]);
+  }
   return null;
 }
