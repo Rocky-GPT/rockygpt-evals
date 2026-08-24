@@ -371,3 +371,65 @@ answer text itself is fine."
 one repetition the model answered the previous topic instead of recalling the
 shuttle. One run at k=5 is within noise of v1's 5/5 and is not treated as a
 regression, but it is the scenario to watch.
+
+---
+
+# TOOL SCHEMA — search_events
+
+Commit under test: `b48d94d` + the accepted discourse fixes (uncommitted).
+
+## Root cause
+
+Every rejected call was one class: an argument the schema does not declare.
+
+| Defect | Count |
+| --- | ---: |
+| `unknown_key:day` | 12 |
+| `unknown_key:date` | 4 |
+| `unknown_key:limit` | 1 |
+| `unknown_key:route` | 1 |
+| `unknown_key:other` | 1 |
+
+No type errors, no length violations, no enum mismatches, no omissions.
+
+The schema invited it. Sibling campus tools all take a narrowing argument —
+`search_dining_hours` has `day`, `search_menu` has `meal`, `search_shuttles`
+has `route`/`serviceDay` — while `search_events` takes only `q` and its
+description said nothing about time. "What events are happening today?"
+therefore gets a `day` argument by reasonable generalisation.
+
+The argument was never needed: `/v1/search/events` is already scoped by an `at`
+value injected server-side (verified — `at=Aug 24` returns events from Aug 23,
+`at=Sep 25` from Sep 24). The default existed and was undocumented.
+
+## Fix
+
+One description, stating the contract: results are already limited to on and
+after the current campus date, there is no date argument, `q` is the only one.
+No `day` parameter added — that would mean building a filter the data service
+does not have. No coercion, no repair logic, no retry.
+
+## Measured
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Valid tool-call rate | 78.9% | **95.1%** |
+| `invalid_arguments` rate | 21.1% | **4.9%** |
+| Final answer correctness | 87.5% | **100.0%** |
+| Consistency | 50.0% | **100.0%** |
+| Fallback rate | 3/40 (7.5%) | **0/40 (0%)** |
+
+## Discourse regression: none
+
+Both runs re-graded with identical graders: **97.1% before, 97.1% after**,
+0/40 fallbacks in each. The raw comparison appeared to show 97.5% -> 95.0%; that
+was a grader defect, not a behaviour change.
+
+`dsc-conversation-truth` was failing an answer that is better than the scenario
+asked for: *"I originally told you that the next shuttle departs at 12:20 PM. If
+you want the current next shuttle time, the latest schedule shows 3:10 PM."* —
+route `conversation`, spoken value leading, current value explicitly labelled.
+The grader failed it for merely mentioning the current time. The failure it was
+built to catch is *substitution*, not correctly-labelled addition, so it now
+requires the spoken value to lead rather than requiring the current value to be
+absent.
