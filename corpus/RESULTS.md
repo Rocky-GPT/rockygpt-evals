@@ -311,3 +311,63 @@ Three candidates, all rejected, all because the upstream contract was the defect
 The measured shape is E for every closed-world domain, plus a narrow B/D
 exception for discourse, which is the only place where no contract repair
 exists.
+
+---
+
+# DISCOURSE — fallback root cause and fix
+
+| Scenario | before | v1 | fixed |
+| --- | ---: | ---: | ---: |
+| topic-shift recall | 0% | 100% | 80% |
+| false-claim recall (strict) | 0% | 80% | 100% |
+| conversation truth | 20% | 80% | **100%** |
+| immediate recall | 100% | 100% | 100% |
+| ordinal previous | 100% | 100% | 100% |
+| entity focus | 100% | 100% | 100% |
+| tx recall spoken | 100% | 80% | 100% |
+| ordinal first | 100% | 80% | 100% |
+| **overall** | 65.0% | 90.0% | **97.5%** |
+| **consistency** | 87.5% | 50.0% | **87.5%** |
+| **fallbacks** | 7/40 (17.5%) | 3/40 (7.5%) | **0/40 (0%)** |
+
+## Root cause
+
+Traced, not guessed. Fallback branches were given a fixed vocabulary and the
+reason persisted to `debug_info`; across 288 + 180 diagnostic turns exactly one
+branch ever fired, and it split into two causes:
+
+- **`submit_malformed:unknown:value_error`** — an empty error `loc` with a
+  `value_error` can only be the single model-level validator,
+  `_ungrounded_carries_no_citations`. The model submitted a route meaning "no
+  campus source" (`ungrounded` or `conversation`) while attaching
+  `citedSourceIds`, and the whole turn was discarded over a mislabeled field.
+  Adding `conversation` to that validator widened a destructive path exactly as
+  the new route came into use — it was selected 55 times per run.
+- **`submit_citation_unresolved`** — the model cited a `sourceId` the turn never
+  produced. Deliberate and security-relevant (THREAT_MODEL 3.4).
+
+Four of the seven hypotheses were killed outright by the traces: route
+classification was stable, `finalize` never downgraded a conversation answer,
+the model recognised conversation-truth questions, and no valid conversation
+claim was rejected for lacking a source.
+
+## Fix
+
+Two changes, both symmetric with a decision already documented in the codebase —
+that rejecting a submission "is a heavy price for a mislabeled route when the
+answer text itself is fine."
+
+1. **Route/citation mismatch normalises instead of rejecting.** The raising
+   validator is gone; `finalize.finalize` drops the contradictory citations and
+   keeps the answer. Only ever in the conservative direction: a route claiming
+   nothing was verified is never promoted to one claiming it was.
+2. **One correction before abandoning a turn to an unresolved citation.** The
+   retry names the `sourceId`s that do resolve. The guarantee is untouched — an
+   id the turn never produced is still never accepted.
+
+## Residual
+
+`dsc-topic-shift-recall` at 4/5. The miss is not a fallback (0 in the run): on
+one repetition the model answered the previous topic instead of recalling the
+shuttle. One run at k=5 is within noise of v1's 5/5 and is not treated as a
+regression, but it is the scenario to watch.
