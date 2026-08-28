@@ -91,7 +91,7 @@ function escapeForSearch(time: string): string {
 /** Venues probed for hours. See hoursScenarios for how they are chosen. */
 const MAX_HOURS_VENUES = 6;
 
-/** Mirrors rockygpt-brain-python brain/tools.py MAX_RECORDS_PER_CALL, so the
+/** Mirrors rockygpt-brain brain/tools.py MAX_RECORDS_PER_CALL, so the
  *  corpus can deliberately include venues the tool boundary hides. */
 const BRAIN_RECORD_CAP = 8;
 

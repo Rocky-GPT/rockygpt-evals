@@ -49,7 +49,7 @@ what reaches it:
   Weekday (12), Saturday (12) and Sunday (9). Measured, not inferred.
 - **BRAIN tool defect** — `MAX_RECORDS_PER_CALL = 8` truncates a 12-trip
   weekday timetable from the front, with no signal to the model that records
-  were dropped (rockygpt-brain-python/.../brain/tools.py:112).
+  were dropped (rockygpt-brain/.../brain/tools.py:112).
 - **Model behavior** — selects from the incomplete, unfiltered early-day slice
   it was given, and states departures that have already left.
 
