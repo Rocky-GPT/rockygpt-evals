@@ -186,7 +186,7 @@ State C (restart BRAIN)        ->  75-turn control suite
 | Residual after C | What reasoning actually needs deterministic Python |
 
 The third bucket is the only one that justifies writing a reasoning layer. See
-`rockygpt-brain-python/DESIGN.md` §9.2 for the admission rule that governs it.
+`rockygpt-brain/DESIGN.md` §9.2 for the admission rule that governs it.
 
 ## Deviation recorded — State C includes a prompt change
 

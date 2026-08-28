@@ -24,7 +24,7 @@ import { writeFileSync } from 'node:fs';
 import { dataGet } from '../client';
 import { parseClock, serviceDayFor, type ShuttleTrip } from './oracle';
 
-/** Mirrors rockygpt-brain-python brain/tools.py MAX_RECORDS_PER_CALL. */
+/** Mirrors rockygpt-brain brain/tools.py MAX_RECORDS_PER_CALL. */
 const BRAIN_RECORD_CAP = 8;
 
 interface SearchResponse {

@@ -137,15 +137,6 @@ export function statesTime(answer: string, expected: string): boolean {
   return new RegExp(`\\b${hour24}:${mm}\\b`).test(answer);
 }
 
-/** Every clock time an answer states, as minutes past midnight. */
-export function timesStated(answer: string): number[] {
-  return [...answer.matchAll(/(\d{1,2})(?::(\d{2}))?\s*([ap])\.?\s*m\.?/gi)].map((match) => {
-    const hour = Number(match[1]) % 12;
-    const minute = Number(match[2] ?? 0);
-    return (match[3].toLowerCase() === 'p' ? hour + 12 : hour) * 60 + minute;
-  });
-}
-
 /**
  * What an answer asserts about a venue's status *right now*.
  *

@@ -89,11 +89,6 @@ function brainActions(value: unknown[]): BrainAnswer['uiActions'] {
   );
 }
 
-/** Run-specific identifiers make explicit remote deletion unnecessary. */
-export function forgetConversation(scope: { visitorId?: string; conversationId?: string }): void {
-  void scope;
-}
-
 export async function dataGet<T>(path: string): Promise<T> {
   const response = await fetch(`${dataUrl()}${path}`, {
     headers: serviceHeaders(),
