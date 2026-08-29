@@ -6,13 +6,6 @@ on:
   push:
     branches: [main, dev]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: Deployed environment to evaluate
-        required: true
-        type: choice
-        options: [staging, production]
-        default: staging
 
 jobs:
   check:
@@ -40,7 +33,8 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    environment: ${{ inputs.environment }}
+    # Staging was retired; production is the only deployed environment left.
+    environment: production
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
