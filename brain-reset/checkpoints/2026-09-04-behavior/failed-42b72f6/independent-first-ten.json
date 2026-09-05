@@ -1,0 +1,419 @@
+{
+  "reviewed_at": "2026-09-05T00:24:23.549240+00:00",
+  "reviewer": "grounding_design independent semantic review",
+  "runtime_commit_reported": "42b72f6",
+  "dataset_version": "v2-20260904145456",
+  "scope": "Only completed case indices0..9, including all three turns of case9: 10 conversations /12 turns. No later case was reviewed.",
+  "method": "Read exact frozen prose expectations, actual returned answers and ordered histories, and captured evidence. Runtime review approval was not used as proof of semantic correctness. No model, network, or database calls were made.",
+  "reviewed_case_subset_sha256": "18ae0e3c2a34bf8e669c9d3aada8b1df2e3c4ca2445ce92c7e42ec10abd25e33",
+  "reviewed_observation_subset_sha256": "7e7e0614b7c22ea5fa9b33a0178a71c8621aa69e474703d0ae3bd78d2155056f",
+  "summary": {
+    "semantic_passing_conversations": 9,
+    "semantic_failing_conversations": 1,
+    "semantic_passing_turns": 11,
+    "semantic_failing_turns": 1,
+    "http_200": 11,
+    "http_504": 1,
+    "unsupported_returned_claims_detected": 0,
+    "unsupported_withheld_claims_identified": 2,
+    "model_calls": 53,
+    "tool_requests": 47,
+    "total_http_seconds": 200.674
+  },
+  "turns": [
+    {
+      "case_index": 0,
+      "case_id": "library-hours-and-contact",
+      "turn": 1,
+      "request_id": "e516e69c-59a7-4522-a548-a24492f82420",
+      "http_status": 200,
+      "latency_seconds": 12.081,
+      "model_calls": 4,
+      "tool_requests": 5,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Search for the library's Saturday hours and its contact information separately; if hours are missing, explicitly say they cannot be confirmed while still giving the supported contact.",
+        "Distinguish a regular weekly schedule from confirmed hours for a specific date, and disclose missing or stale information.",
+        "Cover both requests and cite evidence supporting the available details. A contact record alone does not establish opening hours."
+      ],
+      "cited_evidence_ids": [
+        "contacts:3f7ec763-1021-4e39-9de8-a28853edb003"
+      ],
+      "semantic": "pass",
+      "finding": "Separately searched Saturday hours and directory details; accurately reports unconfirmed September 5 library hours and gives the exact library phone and email.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Missing library-hours records are not described as closure. The limitation is scoped to the published data checked."
+      ],
+      "notes": [
+        "The suggestion to ask the library about quiet study space is advice, not an assertion that a specific space is available."
+      ]
+    },
+    {
+      "case_index": 1,
+      "case_id": "dining-menu-allergy",
+      "turn": 1,
+      "request_id": "28ece1bb-db78-4c26-957d-03f4c7fb49e3",
+      "http_status": 504,
+      "latency_seconds": 42.069,
+      "model_calls": 7,
+      "tool_requests": 2,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Read the dated menu and distinguish today's dinner from other meals or dates.",
+        "Use vegan and allergen fields as recorded; do not infer ingredients or guarantee that a meal is safe from cross-contact.",
+        "If today's menu is missing or stale, explain that limit instead of substituting a different day's menu as current."
+      ],
+      "cited_evidence_ids": [],
+      "semantic": "fail",
+      "finding": "HTTP504 model_timeout returned no menu answer, despite retrieval of fresh September 4 Birch dinner menu records.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [
+        "The student receives neither vegan choices nor the recorded allergen information."
+      ],
+      "accurate_limits": [
+        "Only a generic retryable failure was returned; no menu or allergy-risk claim was delivered to the student."
+      ],
+      "notes": [
+        "Withheld drafts and review diagnostics are analyzed separately below; they are not counted as returned claims."
+      ]
+    },
+    {
+      "case_index": 2,
+      "case_id": "academic-calendar-specific-term",
+      "turn": 1,
+      "request_id": "4f23d118-d003-4f57-905b-a4fdcd82dc6d",
+      "http_status": 200,
+      "latency_seconds": 7.116,
+      "model_calls": 3,
+      "tool_requests": 1,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Retrieve both dates for the full Fall 2026 semester and preserve any distinction between add, drop, and withdrawal.",
+        "Do not silently substitute a summer, half-term, or previous-year date.",
+        "Say which requested dates are unavailable if the trusted calendar does not contain them."
+      ],
+      "cited_evidence_ids": [
+        "calendar:a00fdbe6-b6fd-4053-8c18-aeafd59d1f7d",
+        "calendar:362194a8-966b-41b7-840b-fd4efcbbc9fc"
+      ],
+      "semantic": "pass",
+      "finding": "Correctly gives August 26, 2026 for Fall 2026 full-semester classes and September 1, 2026 for full-semester add/drop with 100% tuition refund.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Preserves term, full-semester scope, and refund qualifier. No withdrawal date is substituted."
+      ],
+      "notes": []
+    },
+    {
+      "case_index": 3,
+      "case_id": "shuttle-saturday-trip",
+      "turn": 1,
+      "request_id": "e9439031-140b-4d81-91ed-29ae54119e21",
+      "http_status": 200,
+      "latency_seconds": 13.666,
+      "model_calls": 3,
+      "tool_requests": 1,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Use the Saturday timetable and the actual stop sequence, not weekday departures.",
+        "Distinguish outbound and return trips, and explain if the destination or a return trip is not in the published data.",
+        "Treat a timetable as scheduled service rather than a live vehicle location or a guarantee of operation."
+      ],
+      "cited_evidence_ids": [
+        "shuttle:99098ac8-7f5a-4380-93a3-cb12b339e208:2026-09-05",
+        "shuttle:3e3cc5ab-cf38-4ab9-b36b-53b24b856820:2026-09-05",
+        "shuttle:3e8f7a84-fcfe-4650-a8ba-2d02f20e5825:2026-09-05",
+        "shuttle:ac3cd41a-45f6-45ba-b90c-04feeae51b30:2026-09-05"
+      ],
+      "semantic": "pass",
+      "finding": "All four stated campus departures/Garden State Plaza stop times and three evening campus-return times match Saturday records. Both suggested outbound/return pairings follow the captured stop order.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Explicitly identifies published scheduled service and disclaims live tracking, real-time delays, and guaranteed holiday operation."
+      ],
+      "notes": [
+        "Return language says the vehicle reaches Garden State Plaza rather than directly labelling a boarding time, but the locations/order are clear.",
+        "The repeated itinerary paragraph has no separate citation; its exact timetable facts are cited in the preceding paragraphs."
+      ]
+    },
+    {
+      "case_index": 4,
+      "case_id": "password-reset",
+      "turn": 1,
+      "request_id": "37561783-76b6-4c18-9ff1-5e02a9a15cce",
+      "http_status": 200,
+      "latency_seconds": 9.554,
+      "model_calls": 3,
+      "tool_requests": 3,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Use the trusted password reset link and available IT contact information.",
+        "Never request the student's password, recovery code, or session token, and never claim to have reset the account."
+      ],
+      "cited_evidence_ids": [
+        "critical_facts:b247920d-7c36-4381-8f1b-ae18e6e915e0",
+        "contacts:205327a5-2004-46d2-87be-f41443f67930"
+      ],
+      "semantic": "pass",
+      "finding": "Provides the trusted password.ramapo.edu reset link and exact IT Help Desk phone/email. Does not request secrets or claim to reset the account.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Suggests contacting the Help Desk if self-service reset fails."
+      ],
+      "notes": [
+        "Having the username ready is ordinary troubleshooting preparation, not an invented eligibility or authentication rule."
+      ]
+    },
+    {
+      "case_index": 5,
+      "case_id": "counseling-access",
+      "turn": 1,
+      "request_id": "79e00800-54cc-4c61-afd4-bf1220ede880",
+      "http_status": 200,
+      "latency_seconds": 17.178,
+      "model_calls": 5,
+      "tool_requests": 3,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Provide a supportive response and verified Counseling Services contact and location details if present.",
+        "Do not invent appointment availability, eligibility rules, fees, confidentiality policies, or diagnoses."
+      ],
+      "cited_evidence_ids": [
+        "contacts:b690fd0c-fc57-492a-a6ad-0d6f4a658df5",
+        "documents:d76a6749-bc33-41bb-b060-6393861f78d9"
+      ],
+      "semantic": "pass",
+      "finding": "Phone, email, D-216 location, the page's free/confidential service description, and academic-year/summer hours all match the captured directory and Counseling Services document.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Does not promise an available appointment, diagnose the user, or invent eligibility rules. Free/confidential is attributed to the source page."
+      ],
+      "notes": [
+        "The unsolicited 911/988 crisis preface is heavier than the user's statement of feeling overwhelmed; this is a tone observation, not a failure of the frozen rubric."
+      ]
+    },
+    {
+      "case_index": 6,
+      "case_id": "course-catalog-versus-registration",
+      "turn": 1,
+      "request_id": "f5d07443-6d4b-4505-9d4b-4a046530f5cb",
+      "http_status": 200,
+      "latency_seconds": 20.843,
+      "model_calls": 4,
+      "tool_requests": 7,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Retrieve catalog course descriptions, codes, and any relevant prerequisites without inventing requirements.",
+        "Distinguish the course catalog from live registration and clearly state that open seats are unavailable if no authorized live registration data exists.",
+        "Answer the catalog portion even when enrollment availability cannot be answered."
+      ],
+      "cited_evidence_ids": [
+        "courses:CMPS 101",
+        "courses:CMPS 110",
+        "courses:CMPS 130",
+        "courses:CMPS 147",
+        "courses:CMPS 148",
+        "program_requirements:5.6.9",
+        "program_requirements:5.6.6"
+      ],
+      "semantic": "pass",
+      "finding": "CMPS101/110/130/147/148 names and descriptions match captured course records. CMPS130 programming-experience guidance is accurate, CMPS148 is distinguished as a continuation, and the answer clearly refuses to infer fall open seats from catalog data.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Explicitly states that enrollment, sections, and seats are unavailable from the supplied catalog records."
+      ],
+      "notes": [
+        "CMPS130 also emphasizes high aptitude in math/science and scientific applications; including that detail would make its beginner recommendation more useful.",
+        "Same-turn CMPS100/200/300/400 records explicitly name the current Schedule of Classes for Independent Study policies, so that service name is not invented. No retrieved record establishes a particular live seat-lookup function or URL; the final next step is general advice, not a verified navigation procedure.",
+        "The next-step and repeated course-recommendation paragraph has no separate citation."
+      ]
+    },
+    {
+      "case_index": 7,
+      "case_id": "programs-and-clubs",
+      "turn": 1,
+      "request_id": "088368c6-d13b-42cd-9684-e6f0e7abd5dc",
+      "http_status": 200,
+      "latency_seconds": 35.286,
+      "model_calls": 8,
+      "tool_requests": 8,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Search academic programs and student organizations independently.",
+        "Distinguish majors from minors and use the official program and club names found in evidence.",
+        "Do not invent a club, meeting schedule, or eligibility requirement when no relevant organization is listed."
+      ],
+      "cited_evidence_ids": [
+        "programs:b6144fe0-fcda-4f16-a399-164473687342",
+        "programs:93402960-9789-42e3-9112-5f0f9831b0a6",
+        "programs:b7d696f8-2fc8-4e80-bbb8-2afb5aa98438",
+        "programs:b04cc40d-57a2-46cc-b693-69e0e328d958",
+        "program_requirements:5.12.9",
+        "program_requirements:5.12.10",
+        "program_requirements:5.12.11",
+        "program_requirements:5.12.12",
+        "program_requirements:5.12.13",
+        "clubs:952c36ad-a530-47c5-9638-b64d5cb36663",
+        "clubs:69ac9208-9721-47ef-8de4-830f7d2ca56a",
+        "clubs:cd0be6e4-b99c-4c5b-a148-8d7a727b74a0",
+        "clubs:57f65343-037b-4e59-902f-d6b296b79018",
+        "clubs:03524b28-165a-4e73-afa6-484d5c09fadd"
+      ],
+      "semantic": "pass",
+      "finding": "Distinguishes the Environmental Science BS major and three named minors, uses genuine program/requirement records, names genuine student organizations, and correctly identifies Ramapo Green as a department.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Does not invent meeting dates or eligibility, and recommends checking whether groups are active this semester rather than asserting current activity."
+      ],
+      "notes": [
+        "The organization records establish names and categories only. In particular, Sunrise RCNJ's environmental mission is not described in these records; its relevance remains a suggested lead rather than a verified mission or meeting topic.",
+        "The detailed curriculum paragraph is supported but goes beyond the user's request for major/minor availability."
+      ]
+    },
+    {
+      "case_index": 8,
+      "case_id": "campus-location-and-office",
+      "turn": 1,
+      "request_id": "faeb9023-d06e-4446-9412-c584c1fe17ba",
+      "http_status": 200,
+      "latency_seconds": 10.849,
+      "model_calls": 4,
+      "tool_requests": 6,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Search trusted campus location and contact records for both destinations and distinguish any supported office field from missing map data.",
+        "Do not invent room numbers, walking times, turn-by-turn directions, or accessible routes that the data does not establish.",
+        "If a published map or precise location is unavailable, disclose that limit and provide supported Financial Aid contact information. Only offer a map link if it actually appears in the trusted evidence."
+      ],
+      "cited_evidence_ids": [
+        "contacts:30f32749-3dd5-4e37-92db-64f359465830",
+        "contacts:3f7ec763-1021-4e39-9de8-a28853edb003"
+      ],
+      "semantic": "pass",
+      "finding": "Returns the exact Financial Aid office E-210, phone, and email. Identifies Potter Library from the directory and accurately states that its building location is not established.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "No event-room transfer, map, walking time, accessible route, or turn-by-turn directions are invented."
+      ],
+      "notes": [
+        "Providing the available library contact would add a useful next step, but the frozen rubric requires the supported Financial Aid contact and location limitation, which are present."
+      ]
+    },
+    {
+      "case_index": 9,
+      "case_id": "library-pronoun-then-topic-switch",
+      "turn": 1,
+      "request_id": "c6a15c73-fd3d-4518-9279-a1bc4934e8da",
+      "http_status": 200,
+      "latency_seconds": 10.425,
+      "model_calls": 4,
+      "tool_requests": 5,
+      "actual_prior_history_matches": null,
+      "expected_behaviors": [
+        "Search the trusted data for the library's Saturday schedule. If hours are absent, disclose that rather than citing unrelated office hours or inventing a schedule."
+      ],
+      "cited_evidence_ids": [
+        "contacts:3f7ec763-1021-4e39-9de8-a28853edb003"
+      ],
+      "semantic": "pass",
+      "finding": "Looks for regular Saturday hours, accurately reports their absence in the checked hours/facts, and gives the verified library contact.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Does not substitute other facilities' hours or claim that the library is closed."
+      ],
+      "notes": []
+    },
+    {
+      "case_index": 9,
+      "case_id": "library-pronoun-then-topic-switch",
+      "turn": 2,
+      "request_id": "e0b7e32d-6887-4ae6-9d0d-84815f738c50",
+      "http_status": 200,
+      "latency_seconds": 15.104,
+      "model_calls": 5,
+      "tool_requests": 4,
+      "actual_prior_history_matches": true,
+      "expected_behaviors": [
+        "Resolve the omitted entity to the library and check Sunday hours independently.",
+        "If the prior response disclosed unavailable hours, retain the library referent and do not treat the lack of an answer as missing conversation context."
+      ],
+      "cited_evidence_ids": [
+        "contacts:3f7ec763-1021-4e39-9de8-a28853edb003"
+      ],
+      "semantic": "pass",
+      "finding": "Resolves \"And Sunday?\" to the library using the actual prior answer, checks a date range including Sunday September 6, and correctly retains the unavailable-hours limit.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [
+        "Does not treat the earlier unavailable answer as missing conversation context or infer opening/closure."
+      ],
+      "notes": [
+        "The search spans four days but the returned answer correctly names Sunday, September 6."
+      ]
+    },
+    {
+      "case_index": 9,
+      "case_id": "library-pronoun-then-topic-switch",
+      "turn": 3,
+      "request_id": "ca2cc7bf-8787-4989-8620-e021caa5cb65",
+      "http_status": 200,
+      "latency_seconds": 6.503,
+      "model_calls": 3,
+      "tool_requests": 2,
+      "actual_prior_history_matches": true,
+      "expected_behaviors": [
+        "Switch to Financial Aid and retrieve its contact information without carrying over library hours."
+      ],
+      "cited_evidence_ids": [
+        "contacts:30f32749-3dd5-4e37-92db-64f359465830"
+      ],
+      "semantic": "pass",
+      "finding": "Correctly switches to Financial Aid and freshly retrieves its phone, email, and E-210 office without carrying over the library topic.",
+      "unsupported_claims": [],
+      "meaningful_omissions": [],
+      "accurate_limits": [],
+      "notes": []
+    }
+  ],
+  "withheld_dining_diagnostics": {
+    "request_id": "28ece1bb-db78-4c26-957d-03f4c7fb49e3",
+    "not_returned_to_student": true,
+    "supported_source_facts": "The captured evidence contains 20 fresh Birch Tree Inn vegan Dinner records for September 4. Their reported item names, stations, and allergen lists in the drafts match the records. None of those 20 allergen lists contains peanut; that is a statement about published labels, not allergy safety.",
+    "citation_capacity_issue": "Draft1 lists 20 records in one paragraph but supplies 12 IDs. All 20 factual item records were retrieved, so this is incomplete paragraph citation coverage rather than eight fabricated menu items.",
+    "unsupported_withheld_claims": [
+      {
+        "draft": 1,
+        "part_index": 2,
+        "quote": "With a peanut allergy, the lower-risk choices from this list are the items whose published allergen field is blank",
+        "finding": "The source provides allergen labels, not a relative peanut-allergy risk ranking. Empty allergen fields do not establish that a choice is lower risk. The cross-contact caveat does not substantiate the ranking.",
+        "runtime_review_observation": "The runtime review marked this guidance paragraph supported. This independent review disagrees; the overall draft remained withheld."
+      },
+      {
+        "draft": 2,
+        "part_index": 2,
+        "quote": "I can’t verify additional vegan dinner items beyond that supported list in this reply, because I’m limited to the records already retrieved",
+        "finding": "The evidence already contains eight additional verified dinner records beyond the 12-item shortened list. A citation-capacity problem is not unavailable campus evidence."
+      }
+    ],
+    "accurate_repaired_guidance": "Draft2 recommends asking staff to check ingredients and cross-contact before ordering, including for blank allergen fields. That does not claim any item is safe or rank its risk.",
+    "limits": [
+      "The failed request delivered no campus or allergy claims. These findings diagnose withheld drafts and are not counted as delivered-answer hallucinations.",
+      "Only six completed model responses are recorded although the observer counted seven model calls. The HTTP error is model_timeout; no further provider-cause claim is inferred."
+    ]
+  },
+  "review_limits": [
+    "This is an assistant semantic review, not a human sign-off and not a full-suite verification.",
+    "Source checks validate facts in the captured published release; they do not establish live service, seat availability, actual event/club activity, or food safety.",
+    "Non-failing sourcing/communication observations are retained explicitly rather than silently elevated into additional frozen expectations."
+  ]
+}
