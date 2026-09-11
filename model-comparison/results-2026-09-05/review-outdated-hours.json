@@ -1,0 +1,80 @@
+{
+  "turns": [
+    {
+      "model": "gpt-5-nano",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "fail",
+      "reason": "The original rubric explicitly resolves this Friday within the current campus-local week. At the supplied Saturday September 5 clock, that Friday is September 4. The answer instead asks the student to choose September 4 versus September 11 and performs no lookup, leaving the required verification unfinished.",
+      "unsupported_claims": [],
+      "quality_notes": [
+        "The two Friday dates it names are calendrically correct, and it does not endorse the 2022 screenshot or assert a current 2 a.m. closing. This is an unnecessary clarification/rubric failure, not an unsupported delivered schedule claim."
+      ]
+    },
+    {
+      "model": "gpt-4o-mini",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "fail",
+      "reason": "Runtime InvalidAnswer with code unsupported_answer prevented a final student answer. The requested verification was not delivered.",
+      "unsupported_claims": [],
+      "quality_notes": [
+        "Withheld drafts are not counted as delivered unsupported claims."
+      ]
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "pass",
+      "reason": "Explicitly resolves this Friday to September 4, 2026 within the supplied current campus week. It checks that date’s campus-hours records, including the complete eleven-record browse, and searches supporting documents and critical facts. The captured records do not establish library hours. It therefore limits its claim to inability to verify that schedule, rejects reliance on the 2022 screenshot, and does not endorse 2 a.m. or substitute another facility’s hours.",
+      "unsupported_claims": [],
+      "quality_notes": [
+        "The optional invitation to clarify September 11 follows, rather than replaces, the required September 4 interpretation."
+      ]
+    },
+    {
+      "model": "gpt-5.4-nano",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "fail",
+      "reason": "Uses Saturday September 5 as this Friday in both retrieval and the delivered answer, contrary to the supplied clock and current-week rubric. It also identifies the main library with Peter P. Mercer Learning Commons without applicable captured support. Its actual refusal to confirm 2 a.m. is appropriately cautious.",
+      "unsupported_claims": [
+        {
+          "text": "this Friday (Sept 5, 2026)",
+          "reason": "September 5, 2026 is Saturday. The supplied campus week’s Friday is September 4, and the captured September 5 administrative-hours row explicitly says Saturday. This is one contradicted date/weekday assertion."
+        },
+        {
+          "text": "the main library (Peter P. Mercer Learning Commons)",
+          "reason": "The only captured passage naming Peter P. Mercer Learning Commons is documents:60bf8bc8-723c-404b-91f7-a1aca5988377, which describes the Village as adjacent to it. That passage does not identify the Learning Commons as the main library. The question embeds this unsupported campus-entity identity as a presupposition."
+        }
+      ],
+      "quality_notes": [
+        "Counted as two distinct delivered factual errors: date/weekday and library identity. The wrong-date lookup is not counted again as another unsupported claim, and no invented 2 a.m. schedule is alleged."
+      ]
+    },
+    {
+      "model": "gpt-5-mini",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "fail",
+      "reason": "Runtime InvalidAnswer with code incomplete_draft prevented a final student answer. The requested verification was not delivered.",
+      "unsupported_claims": [],
+      "quality_notes": [
+        "Withheld drafts are not counted as delivered unsupported claims."
+      ]
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "case": "outdated-hours-claim",
+      "turn": 1,
+      "result": "fail",
+      "reason": "The answer safely declines to confirm 2 a.m. and accurately notes that its captured campus-hours passages concern other facilities. However, its date-dependent searches use Saturday September 5, not the rubric-required Friday September 4, and the final answer leaves this Friday unresolved. It therefore fails the explicit current-campus-week resolution requirement.",
+      "unsupported_claims": [],
+      "quality_notes": [
+        "No incorrect weekday/date is explicitly delivered, and no library closing time is invented. This is a request-context/rubric failure, not an unsupported delivered fact.",
+        "The Campus Hours citation is used to explain the limited records reviewed, with an explicit statement that other facilities’ schedules are not library-hours evidence; it is not treated as an invented hours claim."
+      ]
+    }
+  ]
+}
