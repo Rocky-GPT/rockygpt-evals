@@ -1,0 +1,90 @@
+{
+  "turns": [
+    {
+      "model": "gpt-5-mini",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "fail",
+      "proposed_result": "fail",
+      "reason": "No answer delivered: InvalidAnswer (incomplete_draft). No delivered unsupported claims.",
+      "unsupported_claims": [],
+      "citation_defects": [],
+      "ambiguous_wording": []
+    },
+    {
+      "model": "gpt-5-nano",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "fail",
+      "proposed_result": "fail",
+      "reason": "No answer delivered: InvalidAnswer (incomplete_draft). No delivered unsupported claims.",
+      "unsupported_claims": [],
+      "citation_defects": [],
+      "ambiguous_wording": []
+    },
+    {
+      "model": "gpt-5.4-mini",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "pass",
+      "proposed_result": "pass",
+      "reason": "Correct Saturday date and complete corresponding lists of campus departures, Garden State Plaza stop times and campus returns. Offers real evening Garden State Plaza stop times, and describes a published weekly timetable rather than live service. Evaluated as a whole, the first paragraph explicitly identifies 2:15 PM as the destination stop corresponding to a 1:40 PM campus departure; no invented schedule times.",
+      "unsupported_claims": [],
+      "citation_defects": [],
+      "ambiguous_wording": [
+        {
+          "text": "the 2:15 PM outbound trip is the clearest afternoon option",
+          "reason": "Could be misread in isolation as a campus departure, but the immediately preceding paragraph explicitly maps 2:15 PM to the Garden State Plaza stop and 1:40 PM to its campus departure. Prefer a direct leave-campus/arrive-Plaza pairing."
+        }
+      ]
+    },
+    {
+      "model": "gpt-4o-mini",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "fail",
+      "proposed_result": "fail",
+      "reason": "Incorrectly calls 7:30 PM the latest Garden State Plaza departure despite a retrieved 9:55 PM campus departure. Gives campus departure/return pairs but no Garden State Plaza stop or pickup times, so the requested afternoon-out/evening-back trip is not adequately actionable. Listed individual campus departure/return times are otherwise correct. Does not explicitly claim live vehicle status.",
+      "unsupported_claims": [
+        {
+          "text": "The latest departure for Garden State Plaza is at 7:30 PM, returning at 8:45 PM.",
+          "reason": "Captured Saturday sequence 11 departs campus at 9:55 PM, stops at Garden State Plaza at 10:30 PM, and returns to campus at 11:00 PM. The unqualified latest-departure claim contradicts this later scheduled trip."
+        }
+      ],
+      "citation_defects": [],
+      "ambiguous_wording": []
+    },
+    {
+      "model": "gpt-5.6-luna",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "pass",
+      "proposed_result": "pass",
+      "reason": "Correctly distinguishes campus departure, Garden State Plaza stop and campus return for Saturday and supplies later evening options. States timetable/live/holiday limits without promising operation. Its return-boarding caveat is more cautious than necessary, but the retrieved fields genuinely do not describe boarding procedure; all useful schedule times remain available to the student.",
+      "unsupported_claims": [],
+      "citation_defects": [],
+      "ambiguous_wording": [
+        {
+          "text": "it does not establish a confirmed return trip from the Plaza",
+          "reason": "May overstate uncertainty about a scheduled return, since the ordered route explicitly continues to campus; however the paragraph narrowly ties this to unspecified boarding procedure and does not deny the published stop or return times."
+        }
+      ]
+    },
+    {
+      "model": "gpt-5.4-nano",
+      "case": "shuttle-saturday-trip",
+      "turn": 1,
+      "result": "pass",
+      "proposed_result": "pass",
+      "reason": "Saturday campus departures, Plaza stop times and subsequent campus-return times are accurate, with a timetable/holiday limitation. The answer contains enough correct labeled times to choose an afternoon outbound and evening inbound without requiring a full timetable listing. Its final same-trip advice is confusing but does not explicitly invent a boarding restriction or mislabel campus arrival as Plaza pickup.",
+      "unsupported_claims": [],
+      "citation_defects": [],
+      "ambiguous_wording": [
+        {
+          "text": "then match it with the return time on the same trip (listed as the campus return time)",
+          "reason": "This is poor guidance for a student wanting to stay until evening: the 1:40 PM departure loop returns at 3:00 PM, so they would ordinarily use a later loop after their visit. The sentence may wrongly suggest matching the outbound and inbound to one loop, although the answer separately lists the later Plaza stops and corresponding campus arrivals."
+        }
+      ]
+    }
+  ]
+}
