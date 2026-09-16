@@ -9,12 +9,15 @@ import argparse
 import datetime as dt
 import hashlib
 import json
-import os
 import time
 from pathlib import Path
 
 from dotenv import load_dotenv
-from openai import OpenAI, RateLimitError
+from uuid import uuid4
+
+from rockygpt_brain.accounting import PaidCallError
+from rockygpt_brain.config import RELEASE, configuration_hash, load_deployment
+from rockygpt_brain.provider import open_gateway
 
 from rockygpt_brain.contracts import Answer, ChatMessage
 from rockygpt_brain.engine import review_answer
@@ -28,23 +31,28 @@ def main():
     args = parser.parse_args()
     load_dotenv(Path.cwd() / ".env")
     corpus = json.loads(args.corpus.read_text())
-    model = os.getenv("OPENAI_CHAT_MODEL") or "gpt-5.4"
+    deployment = load_deployment()
+    if deployment.environment != "development":
+        raise ValueError("Evaluation requires development credentials and ledger")
+    model = RELEASE.model
     report = {
         "started_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "kind": "component_regression_on_archived_evidence",
         "corpus_sha256": hashlib.sha256(args.corpus.read_bytes()).hexdigest(),
         "model": model,
+        "configuration_hash": configuration_hash(),
         "results": [],
     }
     last_start = None
-    with OpenAI(max_retries=0) as client:
-        for case in corpus["cases"]:
-            if last_start is not None:
-                time.sleep(max(0, args.interval - (time.monotonic() - last_start)))
-            last_start = time.monotonic()
-            item = {"id": case["id"], "model_calls": 1, "tool_calls": 0, "passed": False}
-            stopped = False
-            try:
+    for case in corpus["cases"]:
+        if last_start is not None:
+            time.sleep(max(0, args.interval - (time.monotonic() - last_start)))
+        last_start = time.monotonic()
+        item = {"id": case["id"], "model_calls": 0, "tool_calls": 0, "passed": False}
+        stopped = False
+        client = None
+        try:
+            with open_gateway(deployment, str(uuid4())) as client:
                 review = review_answer(
                     Answer.model_validate(case["candidate"]),
                     messages=[ChatMessage.model_validate(message) for message in case["messages"]],
@@ -54,41 +62,56 @@ def main():
                     now=dt.datetime.fromisoformat(case["campus_time"]),
                     timeout=30,
                 )
-                supported = all(part.verdict == "supported" for part in review.parts)
-                by_part = {part.part_index: part.verdict == "supported" for part in review.parts}
-                item.update({
-                    "review": review.model_dump(mode="json"),
-                    "supported": supported,
-                    "passed": supported == case["expected"]["supported"] and all(
-                        by_part[expected["part_index"]] == expected["supported"]
-                        for expected in case["expected"]["parts"]
-                    ),
-                })
-            except Exception as error:
-                # Keep provider account details and credentials out of reports.
-                item["error_type"] = type(error).__name__
-                causes = []
-                cause = error.__cause__
-                while cause is not None:
-                    causes.append({"type": type(cause).__name__, "errno": getattr(cause, "errno", None)})
-                    cause = cause.__cause__
-                item["causes"] = causes
-                stopped = isinstance(error, RateLimitError)
-            item["elapsed_seconds"] = round(time.monotonic() - last_start, 3)
-            report["results"].append(item)
-            report["summary"] = {
-                "passed": sum(result["passed"] for result in report["results"]),
-                "attempted": len(report["results"]),
-                "planned": len(corpus["cases"]),
-                "model_calls": len(report["results"]),
-                "tool_calls": 0,
-            }
-            args.output.parent.mkdir(parents=True, exist_ok=True)
-            args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
-            print(f"{'PASS' if item['passed'] else 'FAIL'} {case['id']} ({item['elapsed_seconds']}s)", flush=True)
+            supported = all(part.verdict == "supported" for part in review.parts)
+            by_part = {part.part_index: part.verdict == "supported" for part in review.parts}
+            item.update({
+                "review": review.model_dump(mode="json"),
+                "supported": supported,
+                "passed": supported == case["expected"]["supported"] and all(
+                    by_part[expected["part_index"]] == expected["supported"]
+                    for expected in case["expected"]["parts"]
+                ),
+            })
+        except Exception as error:
+            # Keep provider account details and credentials out of reports.
+            item["error_type"] = type(error).__name__
+            causes = []
+            cause = error.__cause__
+            while cause is not None:
+                causes.append({"type": type(cause).__name__, "errno": getattr(cause, "errno", None)})
+                cause = cause.__cause__
+            item["causes"] = causes
+            stopped = isinstance(error, PaidCallError)
             if stopped:
-                print("Stopped after provider rate/quota failure.", flush=True)
-                break
+                item["error_code"] = error.code
+        if client is not None:
+            item["usage"] = client.usage.report()
+            item["model_calls"] = item["usage"]["modelCalls"]
+            item["request_id"] = client.request_id
+            try:
+                client.finish({"status": "passed" if item["passed"] else "failed",
+                               "kind": "evidence_review_component", "caseId": case["id"]})
+            except PaidCallError:
+                stopped = True
+                item["telemetry_error"] = "accounting_unavailable"
+        item["elapsed_seconds"] = round(time.monotonic() - last_start, 3)
+        report["results"].append(item)
+        report["summary"] = {
+            "passed": sum(result["passed"] for result in report["results"]),
+            "attempted": len(report["results"]),
+            "planned": len(corpus["cases"]),
+            "model_calls": sum(result["model_calls"] for result in report["results"]),
+            "unrun": len(corpus["cases"]) - len(report["results"]),
+            "cost_nusd": sum(result.get("usage", {}).get("costNusd", 0) for result in report["results"]),
+            "unsettled_nusd": sum(result.get("usage", {}).get("unsettledNusd", 0) for result in report["results"]),
+            "tool_calls": 0,
+        }
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+        print(f"{'PASS' if item['passed'] else 'FAIL'} {case['id']} ({item['elapsed_seconds']}s)", flush=True)
+        if stopped:
+            print("Stopped after an accounting or provider failure; unrun cases are not passes.", flush=True)
+            break
     return 0 if report["summary"]["passed"] == len(corpus["cases"]) else 1
 
 
