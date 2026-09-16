@@ -1,5 +1,11 @@
 # Cheaper-model comparison
 
+Phase 1 update (September 11): live execution of `run_openai.py` is retired.
+Its separate file budget and checkpoint-specific runtime cannot be used for new
+paid work. Saved reports and `summarize.py` remain available. Future comparisons
+must use Brain’s shared development gateway and PostgreSQL ledger. The protocol
+below describes the historical experiment only.
+
 User authorized a maximum of **$5 total** on September 5, 2026. This is an
 evaluation artifact, not a production model migration. No push is authorized.
 
