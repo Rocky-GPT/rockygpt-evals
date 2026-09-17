@@ -21,3 +21,32 @@ export async function conversation(
   }
   return results;
 }
+
+export async function recordSuiteResult(params: {
+  suite: string;
+  totalTests: number;
+  passed: number;
+  failed: number;
+  durationMs: number;
+  summary?: Record<string, unknown>;
+}): Promise<void> {
+  const brainUrl = process.env.BRAIN_URL || 'http://127.0.0.1:8000';
+  const runId = `run-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+  try {
+    await fetch(`${brainUrl}/v1/evals/runs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        runId,
+        suite: params.suite,
+        totalTests: params.totalTests,
+        passed: params.passed,
+        failed: params.failed,
+        durationMs: params.durationMs,
+        summary: params.summary || {},
+      }),
+    });
+  } catch {
+    // Non-blocking telemetry
+  }
+}
