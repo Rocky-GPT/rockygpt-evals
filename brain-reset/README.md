@@ -48,10 +48,12 @@ expectations remain unchanged.
 It does not change the acceptance corpus or its expectations.
 
 Run the actual gate using the Brain virtualenv and working directory, so the same
-model configuration is loaded. The script makes one model call per candidate and
-no tool/database calls; captured campus time and evidence remain fixed. Captured
-search coverage stays in the fixtures for provenance; the factual gate receives
-the actual records and conversation, without search counts or truncation flags.
+model configuration is loaded. The script makes one metered model call per
+candidate and no campus retrieval calls; captured campus time and evidence remain
+fixed. Captured search coverage, when present, is passed alongside the records
+and conversation so the gate can distinguish complete matching results from a
+truncated lookup. It cannot establish coverage beyond the recorded query/filters.
+Reports refuse overwrites and retain beginning/ending runtime hashes.
 
 ```sh
 cd ../rockygpt-brain

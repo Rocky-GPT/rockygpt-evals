@@ -29,6 +29,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--interval", type=float, default=10)
     args = parser.parse_args()
+    if args.output.exists():
+        raise SystemExit("Refusing to overwrite an existing evidence-gate report")
     load_dotenv(Path.cwd() / ".env")
     corpus = json.loads(args.corpus.read_text())
     deployment = load_deployment()
@@ -60,7 +62,8 @@ def main():
                     client=client,
                     model=model,
                     now=dt.datetime.fromisoformat(case["campus_time"]),
-                    timeout=30,
+                    timeout=RELEASE.turn_seconds,
+                    retrievals=case.get("search_coverage"),
                 )
             supported = all(part.verdict == "supported" for part in review.parts)
             by_part = {part.part_index: part.verdict == "supported" for part in review.parts}
@@ -96,6 +99,7 @@ def main():
                 item["telemetry_error"] = "accounting_unavailable"
         item["elapsed_seconds"] = round(time.monotonic() - last_start, 3)
         report["results"].append(item)
+        report["ending_configuration_hash"] = configuration_hash()
         report["summary"] = {
             "passed": sum(result["passed"] for result in report["results"]),
             "attempted": len(report["results"]),
