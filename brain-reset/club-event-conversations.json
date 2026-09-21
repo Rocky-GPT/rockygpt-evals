@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "id": "club-profile-contact-followup",
+      "messages": [],
+      "expected_behaviors": ["Resolve the student organization independently of the similarly named academic program, preserve its source website, and retrieve contact details on a real follow-up."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Tell me about the Computer Science Club and where I can find its official club page.", "expected_behaviors": ["Use the club identity or original organization evidence, not the Computer Science academic program. Cite the Archway organization page."]},
+        {"user": "What is their email address?", "expected_behaviors": ["Retrieve the same club's published computerscienceclub@ramapo.edu address from current linked evidence; do not substitute the academic program convener's email."]}
+      ]
+    },
+    {
+      "id": "event-occurrence-followup",
+      "messages": [],
+      "expected_behaviors": ["Repeated event titles identify distinct occurrences, selected by the requested campus date. A hidden location stays hidden."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "When and where is the TCG Club General Meeting on October 1, 2026?", "expected_behaviors": ["Retrieve the October 1 occurrence (Archway event 1410383), 7 PM to 10 PM campus time. Explain that the published location requires sign-in; do not invent a room."]},
+        {"user": "And what about the meeting on October 8?", "expected_behaviors": ["Retrieve the distinct October 8, 2026 occurrence (1410385), using the conversation to identify the event title but fresh evidence for its details."]}
+      ]
+    },
+    {
+      "id": "event-organizer-club-email",
+      "messages": [],
+      "expected_behaviors": ["Follow the explicitly captured event-to-club organizer relationship, then retrieve the club's separately sourced contact details."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Who organizes the TCG Club General Meeting on October 1, 2026, and what is their club page?", "expected_behaviors": ["Use the organizer relationship evidenced by the actual event detail page to identify Trading Card Game Club and its https://archway.ramapo.edu/trading/ organization page."]},
+        {"user": "What is that club's email address?", "expected_behaviors": ["Retrieve tcg@ramapo.edu from the Trading Card Game Club's contact evidence, keeping event page and club directory capture times separate."]}
+      ]
+    },
+    {
+      "id": "club-event-and-contact",
+      "messages": [{"role": "user", "content": "What is the Trading Card Game Club's event on October 1, 2026, and how can I email the club?"}],
+      "expected_behaviors": ["Connect the club's separately sourced contact details with its explicitly linked October 1 event. Preserve the event's own identity, 7 PM to 10 PM campus time, and tcg@ramapo.edu. Do not claim that one verified linked event represents the complete club schedule."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "event-missing-location",
+      "messages": [{"role": "user", "content": "When is Commuter Focus Group on September 21, 2026, and what room is it in?"}],
+      "expected_behaviors": ["Return the published 1 PM to 2 PM campus-time schedule; the '-' location is missing, not a literal room or permission to borrow the organizer's office."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "event-repeated-title-ambiguity",
+      "messages": [{"role": "user", "content": "Tell me about the event called Adler Lock Out."}],
+      "expected_behaviors": ["Recognize multiple distinct occurrences. Clarify the date or explicitly distinguish the returned occurrences, rather than silently merging their records into one event."],
+      "assertions": {"status_in": ["answered", "partial", "clarification"]}
+    },
+    {
+      "id": "club-unfamiliar-entity",
+      "messages": [{"role": "user", "content": "What is the email address for the Zorblax Student Teleportation Club?"}],
+      "expected_behaviors": ["Do not fabricate an organization, email address or relationship. Explain unavailable evidence or ask for clarification without claiming the club cannot exist."],
+      "assertions": {"status_in": ["partial", "unavailable", "clarification"], "max_citations": 0}
+    },
+    {
+      "id": "club-broad-search-regression",
+      "messages": [{"role": "user", "content": "What student clubs involve music? Give me a few options."}],
+      "expected_behaviors": ["Preserve broad original-record search and return sourced examples with sample scope. A single club profile is not the whole directory."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    }
+  ]
+}
