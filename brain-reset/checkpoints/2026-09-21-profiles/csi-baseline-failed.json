@@ -1,0 +1,351 @@
+{
+  "corpus": "/Users/danielrajakumar/code/RockyGPT/rockygpt-evals/brain-reset/profile-conversations.json",
+  "started_at": "2026-09-21T20:16:54.771250+00:00",
+  "base_url": "http://127.0.0.1:8000",
+  "interval_seconds": 0,
+  "human_review": "pending",
+  "results": [
+    {
+      "id": "profile-csi-followups",
+      "tags": [],
+      "expected_behaviors": [
+        "Resolve CSI through curated links; keep source scopes and retrieve fresh evidence on follow-ups."
+      ],
+      "human_review": "pending",
+      "turns": [
+        {
+          "http_status": 200,
+          "response": {
+            "answer": "Today, Monday, September 21, 2026, the Center for Student Involvement (CSI) is listed as open 8:00am–12:00am, so it closes at midnight tonight. Their phone number is (201) 684-7593. [Campus Hours](https://www.ramapo.edu/about/campus-hours/) [Campus Directory](https://www.ramapo.edu/campus-directory/)",
+            "status": "answered",
+            "citations": [
+              {
+                "id": "campus_hours:0de58ca5-0f64-4203-ba1e-4efda6cc2e07:2026-09-21",
+                "title": "Campus Hours",
+                "url": "https://www.ramapo.edu/about/campus-hours/",
+                "collection": "campus_hours",
+                "collected_at": "2026-08-22T05:35:07.483000+00:00",
+                "freshness": "fresh",
+                "valid_from": null,
+                "valid_until": null,
+                "trust_tier": "official_primary",
+                "limitations": [],
+                "record_title": "Center for Student Involvement (CSI)"
+              },
+              {
+                "id": "contacts:aebe6619-bed8-459c-939f-74044ec9b9db",
+                "title": "Campus Directory",
+                "url": "https://www.ramapo.edu/campus-directory/",
+                "collection": "contacts",
+                "collected_at": "2026-09-16T15:24:58.927000+00:00",
+                "freshness": "fresh",
+                "valid_from": null,
+                "valid_until": null,
+                "trust_tier": "official_primary",
+                "limitations": [],
+                "record_title": "Center for Student Involvement"
+              }
+            ],
+            "model": "gpt-5.4-2026-03-05",
+            "datasetVersion": "v2-20260921165836",
+            "trace": [
+              {
+                "tool": "lookup_profile",
+                "arguments": {
+                  "entity": "CSI",
+                  "entity_id": null,
+                  "include": [
+                    "contact",
+                    "hours"
+                  ],
+                  "date": "2026-09-21",
+                  "meal": null
+                },
+                "status": "unavailable",
+                "result_count": 0,
+                "total_matches": 0,
+                "truncated": false,
+                "reason": "identity_registry_unavailable",
+                "evidence_ids": [],
+                "elapsed_ms": 1755,
+                "resolution": {
+                  "status": "unavailable",
+                  "entity": null,
+                  "candidates": []
+                },
+                "components": {}
+              },
+              {
+                "tool": "search_campus",
+                "arguments": {
+                  "collection": "contacts",
+                  "query": "CSI",
+                  "date_from": null,
+                  "date_to": null,
+                  "limit": 4,
+                  "filters": null
+                },
+                "status": "ok",
+                "result_count": 1,
+                "total_matches": 1,
+                "truncated": false,
+                "reason": null,
+                "evidence_ids": [
+                  "contacts:aebe6619-bed8-459c-939f-74044ec9b9db"
+                ],
+                "elapsed_ms": 1625
+              },
+              {
+                "tool": "search_campus",
+                "arguments": {
+                  "collection": "campus_hours",
+                  "query": "CSI",
+                  "date_from": "2026-09-21",
+                  "date_to": "2026-09-21",
+                  "limit": 4,
+                  "filters": null
+                },
+                "status": "ok",
+                "result_count": 1,
+                "total_matches": 1,
+                "truncated": false,
+                "reason": null,
+                "evidence_ids": [
+                  "campus_hours:0de58ca5-0f64-4203-ba1e-4efda6cc2e07:2026-09-21"
+                ],
+                "elapsed_ms": 460
+              },
+              {
+                "tool": "search_campus",
+                "arguments": {
+                  "collection": "critical_facts",
+                  "query": "CSI",
+                  "date_from": null,
+                  "date_to": null,
+                  "limit": 4,
+                  "filters": null
+                },
+                "status": "no_match",
+                "result_count": 0,
+                "total_matches": 0,
+                "truncated": false,
+                "reason": null,
+                "evidence_ids": [],
+                "elapsed_ms": 390
+              }
+            ],
+            "metrics": {
+              "retrievalMs": 4230,
+              "toolResults": [
+                {
+                  "tool": "lookup_profile",
+                  "status": "unavailable",
+                  "result_count": 0,
+                  "total_matches": 0,
+                  "truncated": false,
+                  "reason": "identity_registry_unavailable",
+                  "evidence_ids": [],
+                  "elapsed_ms": 1755,
+                  "resolution": {
+                    "status": "unavailable",
+                    "entity": null,
+                    "candidates": []
+                  },
+                  "components": {}
+                },
+                {
+                  "tool": "search_campus",
+                  "status": "ok",
+                  "result_count": 1,
+                  "total_matches": 1,
+                  "truncated": false,
+                  "reason": null,
+                  "evidence_ids": [
+                    "contacts:aebe6619-bed8-459c-939f-74044ec9b9db"
+                  ],
+                  "elapsed_ms": 1625
+                },
+                {
+                  "tool": "search_campus",
+                  "status": "ok",
+                  "result_count": 1,
+                  "total_matches": 1,
+                  "truncated": false,
+                  "reason": null,
+                  "evidence_ids": [
+                    "campus_hours:0de58ca5-0f64-4203-ba1e-4efda6cc2e07:2026-09-21"
+                  ],
+                  "elapsed_ms": 460
+                },
+                {
+                  "tool": "search_campus",
+                  "status": "no_match",
+                  "result_count": 0,
+                  "total_matches": 0,
+                  "truncated": false,
+                  "reason": null,
+                  "evidence_ids": [],
+                  "elapsed_ms": 390
+                }
+              ],
+              "datasetVersion": "v2-20260921165836",
+              "responseMode": "reviewed_prose",
+              "modelCalls": 4,
+              "draftCalls": 3,
+              "reviewCalls": 1,
+              "toolRequests": 4,
+              "toolExecutions": 4,
+              "validationFailures": [],
+              "fallbackUsed": false,
+              "inputTokens": 22447,
+              "cachedInputTokens": 0,
+              "outputTokens": 733,
+              "reasoningTokens": 369,
+              "draftModelMs": 9887,
+              "reviewModelMs": 3773,
+              "usageComplete": true
+            },
+            "elapsedMs": 19722,
+            "requestId": "de423a7b-1b9f-48d4-8643-ff129b3b2d6d"
+          },
+          "elapsed_seconds": 21.643,
+          "turn": 1,
+          "messages": [
+            {
+              "role": "user",
+              "content": "What time does CSI close today, and what is their phone number?"
+            }
+          ],
+          "expected_behaviors": [
+            "Use the linked profile for applicable New York date hours and contact; midnight is next-day midnight. State any availability uncertainty."
+          ],
+          "assertions": {
+            "status_in": [
+              "answered",
+              "partial"
+            ],
+            "min_citations": 1
+          },
+          "checks": [
+            {
+              "name": "response_object",
+              "passed": true,
+              "detail": "Response is a JSON object"
+            },
+            {
+              "name": "answer_present",
+              "passed": true,
+              "detail": "answer is a nonempty string"
+            },
+            {
+              "name": "requestId_present",
+              "passed": true,
+              "detail": "requestId is a nonempty string"
+            },
+            {
+              "name": "model_present",
+              "passed": true,
+              "detail": "model is a nonempty string"
+            },
+            {
+              "name": "valid_status",
+              "passed": true,
+              "detail": "status='answered'"
+            },
+            {
+              "name": "citations_array",
+              "passed": true,
+              "detail": "citations is an array"
+            },
+            {
+              "name": "citation_0_metadata",
+              "passed": true,
+              "detail": "Citation has nonempty id, title, and url"
+            },
+            {
+              "name": "citation_0_url",
+              "passed": true,
+              "detail": "Citation URL is an absolute HTTP(S) URL"
+            },
+            {
+              "name": "citation_1_metadata",
+              "passed": true,
+              "detail": "Citation has nonempty id, title, and url"
+            },
+            {
+              "name": "citation_1_url",
+              "passed": true,
+              "detail": "Citation URL is an absolute HTTP(S) URL"
+            },
+            {
+              "name": "citation_ids_unique",
+              "passed": true,
+              "detail": "Citation identifiers are unique"
+            },
+            {
+              "name": "min_citations",
+              "passed": true,
+              "detail": "count=2, bound=1"
+            },
+            {
+              "name": "expected_status",
+              "passed": true,
+              "detail": "Expected one of ['answered', 'partial'], got 'answered'"
+            }
+          ],
+          "machine_checks_passed": true
+        },
+        {
+          "http_status": null,
+          "error": "TimeoutError: timed out",
+          "elapsed_seconds": 55.005,
+          "turn": 2,
+          "messages": [
+            {
+              "role": "user",
+              "content": "What time does CSI close today, and what is their phone number?"
+            },
+            {
+              "role": "assistant",
+              "content": "Today, Monday, September 21, 2026, the Center for Student Involvement (CSI) is listed as open 8:00am–12:00am, so it closes at midnight tonight. Their phone number is (201) 684-7593. [Campus Hours](https://www.ramapo.edu/about/campus-hours/) [Campus Directory](https://www.ramapo.edu/campus-directory/)"
+            },
+            {
+              "role": "user",
+              "content": "And what is their email?"
+            }
+          ],
+          "expected_behaviors": [
+            "Resolve the same entity from the actual prior conversation and retrieve the email selectively."
+          ],
+          "assertions": {
+            "status_in": [
+              "answered",
+              "partial"
+            ],
+            "min_citations": 1
+          },
+          "checks": [
+            {
+              "name": "request_succeeded",
+              "passed": false,
+              "detail": "TimeoutError: timed out"
+            }
+          ],
+          "machine_checks_passed": false
+        }
+      ],
+      "not_run_turns": 1,
+      "machine_checks_passed": false,
+      "evaluated_at": "2026-09-21T20:18:11.421624+00:00"
+    }
+  ],
+  "summary": {
+    "cases": 1,
+    "planned_cases": 1,
+    "completed_turns": 2,
+    "not_run_turns": 1,
+    "machine_checks_passed_cases": 0,
+    "elapsed_seconds": 76.648,
+    "semantic_review": "pending"
+  }
+}
