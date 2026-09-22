@@ -1,0 +1,457 @@
+{
+  "version": 1,
+  "description": "Multi-hop campus graph conversations. Each answer needs two or more connected facts, such as program to convener to contact. run.py sends them to the Brain like any other corpus; check_graph_paths.py checks each case's declared graph path against a published graph export without model calls. Expected facts come from the snapshot below and can go stale as events pass and sources change.",
+  "snapshot": {
+    "dataset_version": "dev-profiles-organizers-20260922",
+    "identity_hash": "58aba475f00b7cd5b186e928eba0ad542de65577876de63f7b52cc1670d63392",
+    "campus_date": "2026-09-22"
+  },
+  "phases": [
+    {"id": "now", "status": "shipped", "title": "Published relationships: convener, profile_course, organized_by (clubs)"},
+    {"id": "organizations", "status": "planned", "title": "Archway organizer groups as organization identities"},
+    {"id": "requirements", "status": "planned", "title": "Program requirement groups as contextual records with explicit course options"},
+    {"id": "program-faculty", "status": "planned", "title": "Program to listed faculty from the catalog's explicit Program Faculty field"},
+    {"id": "places", "status": "planned", "title": "People and offices to buildings from published room numbers"},
+    {"id": "schools", "status": "planned", "title": "Programs and people to schools through a reviewed name mapping"},
+    {"id": "aliases", "status": "planned", "title": "Reviewed aliases, including deliberately ambiguous ones"}
+  ],
+  "cases": [
+    {
+      "id": "graph-cs-convener-contact",
+      "tags": ["graph", "multi-hop", "follow-up"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "program", "name": "Computer Science BS"},
+        "hops": [{"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Scott Frees"}]}],
+        "leaf": "The person's own contact record: sfrees@ramapo.edu, office ASB-409."
+      },
+      "messages": [],
+      "expected_behaviors": ["Follow the catalog Convener-field relationship from the program to the person, then use that person's own contact record."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Who is the convener of the Computer Science BS program?", "expected_behaviors": ["Name Scott Frees and attribute it to the catalog's Convener field. Do not present it as a verified current appointment beyond what the catalog states."]},
+        {"user": "What's their email and office?", "expected_behaviors": ["Resolve 'their' to Scott Frees and give sfrees@ramapo.edu and office ASB-409 from his contact record, not from the program record."]}
+      ]
+    },
+    {
+      "id": "graph-person-convened-programs",
+      "tags": ["graph", "incoming"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "person", "name": "Emma C. Rainforth"},
+        "hops": [{"predicate": "convener", "direction": "in", "expect": [
+          {"kind": "program", "name": "Environmental Science BS"},
+          {"kind": "program", "name": "Natural Sciences BS"},
+          {"kind": "program", "name": "Earth Science Minor"},
+          {"kind": "program", "name": "Environmental Science Minor"},
+          {"kind": "program", "name": "Science and Society Minor"}
+        ]}],
+        "note": "The edges exist, but no current lookup_profile section follows convener edges backwards from a person."
+      },
+      "messages": [{"role": "user", "content": "Which programs does Professor Emma C. Rainforth convene?"}],
+      "expected_behaviors": ["List the five programs whose catalog Convener field names her: Environmental Science BS, Natural Sciences BS, Earth Science Minor, Environmental Science Minor and Science and Society Minor. Do not add programs from her department or her course list."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-convener-profile-courses",
+      "tags": ["graph", "multi-hop"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "program", "name": "Music BA"},
+        "hops": [
+          {"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Christopher Reali"}]},
+          {"predicate": "profile_course", "direction": "out", "expect": [
+            {"kind": "course", "code": "MUSI 232"}, {"kind": "course", "code": "MUSI 249"}, {"kind": "course", "code": "MUSI 263"},
+            {"kind": "course", "code": "MUSI 301"}, {"kind": "course", "code": "MUSI 336"}, {"kind": "course", "code": "MUSI 350"}
+          ]}
+        ]
+      },
+      "messages": [{"role": "user", "content": "Which courses are listed on the faculty profile of the Music BA convener?"}],
+      "expected_behaviors": ["Identify Christopher Reali from the catalog Convener field, then list the six catalog courses coded on his faculty profile: MUSI 232, 249, 263, 301, 336 and 350. Present them as an undated profile list, not his current teaching schedule."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-event-organizer-followup",
+      "tags": ["graph", "multi-hop", "follow-up", "incoming"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "event", "name": "Gratitude Journals (2026-10-08)"},
+        "hops": [
+          {"predicate": "organized_by", "direction": "out", "expect": [{"kind": "club", "name": "Psychology Affiliation"}]},
+          {"predicate": "organized_by", "direction": "in", "expect_count": 7, "expect_includes": [
+            {"kind": "event", "name": "Psychology Grad Panel (2026-11-05)"},
+            {"kind": "event", "name": "Discovering Personality (2026-11-19)"}
+          ]}
+        ]
+      },
+      "messages": [],
+      "expected_behaviors": ["Follow the event's explicit organizer link to the club, then back to the club's other linked events."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Who is organizing Gratitude Journals on October 8, 2026, and how do I contact them?", "expected_behaviors": ["Name Psychology Affiliation from the event page's explicit organizer, and give psychaf@ramapo.edu from the club's own directory record."]},
+        {"user": "What else are they hosting in November 2026?", "expected_behaviors": ["List Psychology Grad Panel (November 5, 1-2 PM) and Discovering Personality (November 19, 1-2 PM). Say this covers events with an approved organizer link, not the complete campus calendar."]}
+      ]
+    },
+    {
+      "id": "graph-club-events-in-range",
+      "tags": ["graph", "incoming", "time-sensitive"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "club", "name": "Sports Club"},
+        "hops": [{"predicate": "organized_by", "direction": "in", "expect_count": 12, "expect_includes": [
+          {"kind": "event", "name": "Falcons VS Saints (2026-10-05)"},
+          {"kind": "event", "name": "Bills VS Rams (2026-10-12)"},
+          {"kind": "event", "name": "Commanders VS 49ers (2026-10-19)"},
+          {"kind": "event", "name": "Cowboys VS Eagles (2026-10-26)"}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "What events does the Sports Club have in October 2026?"}],
+      "expected_behaviors": ["Select the October occurrences among the club's linked events: Falcons VS Saints (October 5, 8-10 PM), Bills VS Rams (October 12, 1-2 PM), Commanders VS 49ers (October 19, 8-10 PM) and Cowboys VS Eagles (October 26, 8-10 PM). Keep each occurrence's own time, exclude September, November and December dates, and do not call the result the complete campus calendar."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-profile-course-not-current",
+      "tags": ["graph", "limitation"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "person", "name": "Emma C. Rainforth"},
+        "hops": [{"predicate": "profile_course", "direction": "out", "expect_includes": [{"kind": "course", "code": "GEOL 327"}]}]
+      },
+      "messages": [{"role": "user", "content": "Is Emma C. Rainforth teaching Geology of New Jersey (GEOL 327) this semester?"}],
+      "expected_behaviors": ["Her faculty profile lists GEOL 327, but the list is undated. Say the evidence does not establish that she teaches it this semester, rather than answering yes or no."],
+      "assertions": {"status_in": ["answered", "partial", "unavailable"], "min_citations": 0}
+    },
+    {
+      "id": "graph-legacy-convener-not-promoted",
+      "tags": ["graph", "negative"],
+      "graph": {
+        "phase": "now",
+        "start": {"kind": "program", "name": "Accounting BS"},
+        "hops": [{"predicate": "convener", "direction": "out", "expect": []}],
+        "note": "The programs artifact still carries a legacy first-listed-faculty convener (Constance Crawford); it must never become an edge or an answer."
+      },
+      "messages": [{"role": "user", "content": "Who is the convener of the Accounting BS program?"}],
+      "expected_behaviors": ["The catalog has no Convener-field link for this program. Do not name Constance Crawford, or anyone else, as convener from the legacy first-listed-faculty fallback. Say the convener is not published and point to available program resources instead."],
+      "assertions": {"status_in": ["answered", "partial", "unavailable"]}
+    },
+    {
+      "id": "graph-org-events-week",
+      "tags": ["graph", "incoming", "time-sensitive"],
+      "graph": {
+        "phase": "organizations",
+        "start": {"kind": "organization", "name": "Women's Center & LGBTQ+ Services", "archway_group_id": "34151"},
+        "hops": [{"predicate": "organized_by", "direction": "in", "expect_includes": [
+          {"kind": "event", "name": "Crystal Queer Tarot (2026-09-23)"},
+          {"kind": "event", "name": "Quiet Together — Silent Book Club & Silent Space (2026-09-23)"},
+          {"kind": "event", "name": "QT+ Book Club (2026-09-24)"},
+          {"kind": "event", "name": "Crafting Community (2026-09-28)"},
+          {"kind": "event", "name": "Crystal Queer Tarot (2026-09-30)"},
+          {"kind": "event", "name": "Quiet Together — Silent Book Club & Silent Space (2026-09-30)"}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "What is the Women's Center & LGBTQ+ Services hosting between September 22 and September 30, 2026?"}],
+      "expected_behaviors": ["Use events whose explicit Archway organizer is this group: Crystal Queer Tarot (September 23 and 30, 1:30-3 PM), Quiet Together — Silent Book Club & Silent Space (September 23 and 30, 6-8 PM), QT+ Book Club (September 24, 1-2 PM) and Crafting Community (September 28, 6-8 PM). Keep each occurrence's own location; QT+ Book Club is in George T. Potter Library (LC417), not the center's room. Do not call the list complete."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-org-events-month",
+      "tags": ["graph", "incoming", "time-sensitive"],
+      "graph": {
+        "phase": "organizations",
+        "start": {"kind": "organization", "name": "Center for Reading and Writing", "archway_group_id": "46329"},
+        "hops": [{"predicate": "organized_by", "direction": "in", "expect_includes": [
+          {"kind": "event", "name": "Note Taking Strategies (2026-10-01)"},
+          {"kind": "event", "name": "Critical Reading Strategies (2026-10-05)"},
+          {"kind": "event", "name": "Developing an Argument and Thesis (2026-10-07)"},
+          {"kind": "event", "name": "Academic Success Strategies (2026-10-08)"},
+          {"kind": "event", "name": "Improving Sentences (2026-10-19)"},
+          {"kind": "event", "name": "Annotating and Outlining (2026-10-22)"},
+          {"kind": "event", "name": "APA Documentation Style (2026-10-26)"},
+          {"kind": "event", "name": "Avoiding Plagiarism (2026-10-28)"},
+          {"kind": "event", "name": "Chicago/Turabian Documentation Style: When and How to Cite Sources (2026-10-28)"},
+          {"kind": "event", "name": "MLA Style: When and How to Cite Sources (2026-10-29)"}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "What workshops is the Center for Reading and Writing running in October 2026?"}],
+      "expected_behaviors": ["List the ten October occurrences it organizes, from Note Taking Strategies (October 1) to MLA Style: When and How to Cite Sources (October 29), each with its own date and time. Most locations are 'Private Location (register to display)' or 'Online Event'; report them as published and do not invent rooms. Archway lists this group as a Department, not a student club."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-event-organizer-and-location",
+      "tags": ["graph", "multi-hop"],
+      "graph": {
+        "phase": "organizations",
+        "start": {"kind": "event", "name": "Crystal Queer Tarot (2026-09-23)"},
+        "hops": [{"predicate": "organized_by", "direction": "out", "expect": [{"kind": "organization", "name": "Women's Center & LGBTQ+ Services", "archway_group_id": "34151"}]}]
+      },
+      "messages": [{"role": "user", "content": "Who is hosting Crystal Queer Tarot on September 23, 2026, and where is it?"}],
+      "expected_behaviors": ["Name Women's Center & LGBTQ+ Services from the event page's explicit organizer. Take the place from this occurrence's own location field, Women's Center & LGBTQ+ Services (C-220), 1:30-3 PM; the organizer link alone does not establish where an event is held."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-organizer-is-not-venue",
+      "tags": ["graph", "incoming", "negative"],
+      "graph": {
+        "phase": "organizations",
+        "start": {"kind": "organization", "name": "Mackin Hall", "archway_group_id": "34209"},
+        "hops": [{"predicate": "organized_by", "direction": "in", "expect_count": 16, "expect_includes": [
+          {"kind": "event", "name": "Build Your Own Boba (2026-10-07)"},
+          {"kind": "event", "name": "Fondue Night (2026-10-13)"},
+          {"kind": "event", "name": "Donuts for Days! (2026-10-16)"},
+          {"kind": "event", "name": "Guess the number of candies in the Jar (2026-10-21)"}
+        ]}],
+        "note": "Mackin Hall is both an Archway organizer group and a building name; resolution must stay kind-aware once buildings exist."
+      },
+      "messages": [{"role": "user", "content": "What is Mackin Hall hosting in October 2026, and which of those events are actually held in Mackin?"}],
+      "expected_behaviors": ["Treat Mackin Hall as the residence-hall group that organizes these events, and list its ten October occurrences. Only Build Your Own Boba (October 7), Fondue Night (October 13), Donuts for Days! (October 16) and Guess the number of candies in the Jar (October 21) publish a Mackin first-floor lounge location. The rest are private or unpublished; do not assume an event is held in Mackin because Mackin Hall organizes it."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-req-cs-bs-required",
+      "tags": ["graph", "requirements"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"kind": "program", "name": "Computer Science BS"},
+        "hops": [{"predicate": "requirement_group", "direction": "out", "expect_includes": [
+          {"record": "requirement_group", "label": "Computer Science Major Requirements"},
+          {"record": "requirement_group", "label": "Math Electives"},
+          {"record": "requirement_group", "label": "Computer Science Electives: Select Seven (7)"}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "What courses are required for the Computer Science BS?"}],
+      "expected_behaviors": ["Separate required courses from choices. Required: CMPS 147, 148, 220, 231, 311, 361, 366 and 450, MATH 121, and one of MATH 205 or MATH 237. Choices: at least 2 of the 17 Math Electives options and at least 7 of the 18 Computer Science Electives options, plus the Career Pathway requirements and General Education. Never list elective options as required courses."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-req-elective-count",
+      "tags": ["graph", "requirements"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"kind": "program", "name": "Computer Science BS"},
+        "hops": [
+          {"predicate": "requirement_group", "direction": "out", "expect_includes": [{"record": "requirement_group", "label": "Math Electives", "select_at_least": 2}]},
+          {"predicate": "requirement_option", "direction": "out", "expect_includes": [
+            {"kind": "course", "code": "MATH 122"}, {"kind": "course", "code": "MATH 262"},
+            {"kind": "course", "code": "MATH 353"}, {"kind": "course", "code": "MATH 370"}
+          ]}
+        ]
+      },
+      "messages": [{"role": "user", "content": "How many math electives do I need for the Computer Science BS, and what are the options?"}],
+      "expected_behaviors": ["At least 2 from the Math Electives group, which has 17 options: MATH 122, 124, 200, 225, 240, 245, 253, 262, 282, 290, 300, 305, 321, 339, 360 and 390, plus MATH 353 or MATH 370 as a single option. Keep the count attached to the group."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-req-elective-not-required",
+      "tags": ["graph", "requirements", "incoming"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"kind": "course", "code": "CMPS 331"},
+        "hops": [{"predicate": "requirement_option", "direction": "in", "expect_includes": [
+          {"record": "requirement_group", "label": "Computer Science Electives: Select Seven (7)", "program": "Computer Science BS", "select_at_least": 7}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "Is CMPS 331 Artificial Intelligence required for the Computer Science BS?"}],
+      "expected_behaviors": ["No. It is one of 18 options in the CS BS group 'Computer Science Electives: Select Seven (7)', from which students choose at least seven. Appearing in a program's requirements does not make a course required."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-req-minor-followup",
+      "tags": ["graph", "requirements", "follow-up"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"kind": "program", "name": "Computer Science Minor"},
+        "hops": [{"predicate": "requirement_group", "direction": "out", "expect_includes": [
+          {"record": "requirement_group", "label": "Required Courses"},
+          {"record": "requirement_group", "label": "Electives", "select_at_least": 3}
+        ]}]
+      },
+      "messages": [],
+      "expected_behaviors": ["Keep requirement groups scoped to the program the student asked about."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Is Data Structures required for the Computer Science minor?", "expected_behaviors": ["Yes: CMPS 231 Data Structures is in the minor's Required Courses, along with CMPS 147 and CMPS 148."]},
+        {"user": "What about Operating Systems?", "expected_behaviors": ["For the minor, CMPS 311 Operating Systems is only one of 20 elective options, of which students choose at least 3. It is required for the CS BS, not the minor; do not carry the major's requirement over."]}
+      ]
+    },
+    {
+      "id": "graph-req-course-reverse",
+      "tags": ["graph", "requirements", "incoming"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"kind": "course", "code": "CMPS 147"},
+        "hops": [{"predicate": "requirement_option", "direction": "in", "expect_includes": [
+          {"record": "requirement_group", "label": "Computer Science Major Requirements", "program": "Computer Science BS"},
+          {"record": "requirement_group", "label": "Major Requirements", "program": "Cybersecurity BS"},
+          {"record": "requirement_group", "label": "Engineering Physics Major Requirements", "program": "Engineering Physics BS"},
+          {"record": "requirement_group", "label": "Required Courses", "program": "Computer Science Minor"},
+          {"record": "requirement_group", "label": "Traditional Track", "program": "Mathematics BS"},
+          {"record": "requirement_group", "label": "Math Requirement", "program": "Biology BS", "select_at_least": 2},
+          {"record": "requirement_group", "label": "General Education: Quantitative Reasoning"}
+        ]}]
+      },
+      "messages": [{"role": "user", "content": "Which programs require CMPS 147 Computer Science I?"}],
+      "expected_behaviors": ["Separate required from alternatives. Required outright: Computer Science BS, Cybersecurity BS, Engineering Physics BS and the Computer Science Minor. Mathematics BS (both tracks) requires CMPS 130 or CMPS 147. Biology BS lists it as one option in its Math Requirement (choose at least 2). It is also a General Education Quantitative Reasoning option. Do not flatten the alternatives into 'required'."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-req-shared-gen-ed",
+      "tags": ["graph", "requirements"],
+      "graph": {
+        "phase": "requirements",
+        "start": {"record": "requirement_group", "label": "General Education: Quantitative Reasoning", "select_at_least": 1},
+        "hops": [{"predicate": "requirement_option", "direction": "out", "expect_count": 10, "expect_includes": [
+          {"kind": "course", "code": "CMPS 110"}, {"kind": "course", "code": "CMPS 147"},
+          {"kind": "course", "code": "MATH 100T"}, {"kind": "course", "code": "PHIL 106"}
+        ]}],
+        "note": "64 programs carry this identical block; it should be one shared group, not 64 copies."
+      },
+      "messages": [{"role": "user", "content": "Which courses satisfy the General Education Quantitative Reasoning requirement?"}],
+      "expected_behaviors": ["Choose one of CMPS 110, CMPS 147, MATH 100T, MATH 101, MATH 104, MATH 106, MATH 108, MATH 110, MATH 121 or PHIL 106. Include the catalog note that a major may specify a particular math course. Present it as the shared General Education requirement, not one program's requirement."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-program-listed-faculty",
+      "tags": ["graph", "multi-hop"],
+      "graph": {
+        "phase": "program-faculty",
+        "start": {"kind": "program", "name": "Accounting BS"},
+        "hops": [{"predicate": "listed_faculty", "direction": "out", "expect": [
+          {"kind": "person", "name": "Constance Crawford"},
+          {"kind": "person", "name": "Yongbum Kim"},
+          {"kind": "person", "name": "Changhee Lee"},
+          {"kind": "person", "name": "Edward Pettit"},
+          {"kind": "person", "name": "Wilson Rose"},
+          {"kind": "person", "name": "Kathryn G. Yeaton"}
+        ]}],
+        "note": "Only the catalog's explicit Program Faculty field (customFields.xiQxl) is evidence. The published faculty array mixes fields, name matches and, for some programs, a scraper heuristic."
+      },
+      "messages": [{"role": "user", "content": "Which faculty are listed for the Accounting BS program, and what are their emails?"}],
+      "expected_behaviors": ["Use the catalog's Program Faculty field: Constance Crawford (ccrawfor@ramapo.edu), Yongbum Kim (ykim3@ramapo.edu), Changhee Lee (clee6@ramapo.edu), Edward Pettit (epettit@ramapo.edu), Wilson Rose (wrose1@ramapo.edu) and Kathryn G. Yeaton (kyeaton@ramapo.edu), each email from that person's own record. Describe them as listed program faculty, not as teaching particular courses this term."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-listed-faculty-not-convener",
+      "tags": ["graph", "negative"],
+      "graph": {
+        "phase": "program-faculty",
+        "start": {"kind": "program", "name": "Accounting BS"},
+        "hops": [{"predicate": "listed_faculty", "direction": "out", "expect_includes": [{"kind": "person", "name": "Constance Crawford"}]}]
+      },
+      "messages": [{"role": "user", "content": "Is Constance Crawford the convener of the Accounting BS, or is she just on its faculty?"}],
+      "expected_behaviors": ["The catalog lists her in the program's Program Faculty field, but no Convener-field evidence names a convener for this program. Say she is listed faculty and the convener is not published; do not promote her to convener because she is listed first."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-convener-office-building",
+      "tags": ["graph", "multi-hop", "follow-up"],
+      "graph": {
+        "phase": "places",
+        "start": {"kind": "program", "name": "Finance BS"},
+        "hops": [
+          {"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Timothy Haase"}]},
+          {"predicate": "office_at", "direction": "out", "expect": [{"kind": "building", "name": "Anisfield School of Business (ASB)", "concept3d_id": "1133424"}]}
+        ]
+      },
+      "messages": [],
+      "expected_behaviors": ["Carry the subject across three turns: program to convener, convener to office room, room to building."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Who is the convener of the Finance BS?", "expected_behaviors": ["Name Timothy Haase from the catalog Convener field."]},
+        {"user": "Where is their office?", "expected_behaviors": ["Give room ASB-511 from Timothy Haase's own contact record."]},
+        {"user": "Which building is that in?", "expected_behaviors": ["The Anisfield School of Business (ASB) building, from the reviewed room-prefix mapping. A building is a location, not a claim about which school he belongs to."]}
+      ]
+    },
+    {
+      "id": "graph-office-colocated",
+      "tags": ["graph", "multi-hop", "incoming"],
+      "graph": {
+        "phase": "places",
+        "start": {"kind": "office", "name": "Registrar"},
+        "hops": [
+          {"predicate": "located_at", "direction": "out", "expect": [{"kind": "building", "name": "Academic Building D", "concept3d_id": "1133371"}]},
+          {"predicate": "located_at", "direction": "in", "expect_includes": [
+            {"kind": "office", "name": "Center for Student Success (Academic Advising)"},
+            {"kind": "office", "name": "Counseling Center"},
+            {"kind": "office", "name": "Health Services"}
+          ]}
+        ]
+      },
+      "messages": [{"role": "user", "content": "Which building is the Registrar in, and which other offices in the campus directory are in that building?"}],
+      "expected_behaviors": ["The Registrar's room D-224 places it in Academic Building D. Other directory offices with D-wing rooms: Center for Student Success (Academic Advising) D-207, Counseling Center D-216 and Health Services D-216C. Say this covers offices with published room numbers, not a complete building directory."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-school-name-conflict",
+      "tags": ["graph", "multi-hop", "conflict"],
+      "graph": {
+        "phase": "schools",
+        "start": {"kind": "program", "name": "Computer Science BS"},
+        "hops": [
+          {"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Scott Frees"}]},
+          {"predicate": "part_of", "direction": "out", "expect": [{"kind": "school", "name": "School of Science, Nursing, and Health"}]}
+        ],
+        "note": "The program record says School of Theoretical and Applied Science; the faculty record uses the newer school name."
+      },
+      "messages": [{"role": "user", "content": "Which school is the Computer Science BS in, and is its convener in the same school?"}],
+      "expected_behaviors": ["The program record lists the School of Theoretical and Applied Science; Scott Frees's faculty profile lists the School of Science, Nursing, and Health. Report both with their sources. Without a reviewed mapping between the older and newer school names, do not claim they are the same school or different ones."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-alias-ambiguous-program",
+      "tags": ["graph", "alias", "ambiguity"],
+      "graph": {
+        "phase": "aliases",
+        "start": {"resolve": "Computer Science", "expect": [
+          {"kind": "program", "name": "Computer Science BS"},
+          {"kind": "program", "name": "Computer Science MS"},
+          {"kind": "program", "name": "Computer Science Minor"},
+          {"kind": "program", "name": "Computer Science 4+1"}
+        ]},
+        "hops": [{"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Scott Frees"}]}]
+      },
+      "messages": [{"role": "user", "content": "Who convenes Computer Science?"}],
+      "expected_behaviors": ["'Computer Science' matches four programs: the BS, MS, Minor and 4+1. Either ask which one, or say the catalog lists Scott Frees as convener of all four, citing each. Do not silently answer for the BS alone."],
+      "assertions": {"status_in": ["answered", "partial", "clarification"]}
+    },
+    {
+      "id": "graph-alias-two-entries",
+      "tags": ["graph", "alias", "ambiguity"],
+      "graph": {
+        "phase": "aliases",
+        "start": {"resolve": "Public Safety", "expect": [
+          {"kind": "office", "name": "Public Safety (Emergency)"},
+          {"kind": "office", "name": "Public Safety (Non-Emergency)"}
+        ]},
+        "hops": []
+      },
+      "messages": [{"role": "user", "content": "What's the phone number for Public Safety?"}],
+      "expected_behaviors": ["'Public Safety' covers two directory entries. Give both, labeled: emergency (201) 684-6666 and non-emergency (201) 684-7432. Do not pick one."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "graph-alias-short-name",
+      "tags": ["graph", "alias"],
+      "graph": {
+        "phase": "aliases",
+        "start": {"resolve": "Birch", "expect": [{"kind": "venue", "name": "Birch Tree Inn"}]},
+        "hops": []
+      },
+      "messages": [{"role": "user", "content": "What's the phone number for Birch?"}],
+      "expected_behaviors": ["Resolve 'Birch' to Birch Tree Inn and give its published directory phone, (201) 684-7592."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "graph-alias-department-name",
+      "tags": ["graph", "alias"],
+      "graph": {
+        "phase": "aliases",
+        "start": {"resolve": "Potter Library", "expect": [{"kind": "office", "name": "Library"}]},
+        "hops": [],
+        "note": "The Library contact record publishes 'Potter Library' as its department, which is the evidence for this alias."
+      },
+      "messages": [{"role": "user", "content": "How do I contact Potter Library?"}],
+      "expected_behaviors": ["Resolve Potter Library to the Library directory entry and give refdesk@ramapo.edu and (201) 684-7578."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    }
+  ]
+}

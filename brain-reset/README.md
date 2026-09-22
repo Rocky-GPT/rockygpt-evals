@@ -61,6 +61,39 @@ cd ../rockygpt-brain
   --output ../rockygpt-evals/brain-reset/results/evidence-gate.json
 ```
 
+## Multi-hop graph conversations
+
+`graph-conversations.json` holds 26 conversations (31 turns) whose answers need
+two or more connected facts: a program's convener and that person's office, a
+club's linked events, the options inside a requirement group. Each case declares
+its graph path and the roadmap phase that publishes it (`now`, `organizations`,
+`requirements`, `program-faculty`, `places`, `schools`, `aliases`). Expected
+facts come from `dev-profiles-organizers-20260922` and go stale as events pass.
+Predicate names for planned phases (`listed_faculty`, `office_at`,
+`located_at`, `part_of`, `requirement_group`, `requirement_option`) are
+provisional; rename them in the fixtures when the phase ships.
+
+`check_graph_paths.py` walks each declared path through a published graph
+export with no model calls. A case is ready when every hop reaches the expected
+entities, blocked when something it needs is not published yet, and a mismatch
+when published data disagrees with the fixture. Expectations are checked even for
+blocked cases, so typos and renamed entities surface early. Mismatches fail, and
+so does any case short of ready in a phase marked `shipped`; mark a phase
+shipped once it lands. The first run found 7 of 26 ready (all `now` cases).
+
+```sh
+python3 brain-reset/check_graph_paths.py --base-url http://127.0.0.1:8000
+python3 brain-reset/check_graph_paths.py --graph campus-knowledge-graph.json
+python3 brain-reset/run.py --corpus brain-reset/graph-conversations.json \
+  --output brain-reset/results/graph-suite.json
+```
+
+The first command reads the development-only `/v1/dev/graph/export`; the second
+uses the Dev UI's **Download graph** file. Path readiness says nothing about
+whether the Brain can use a path in chat: incoming convener edges, for example,
+exist but no current profile section follows them. Only the paid `run.py` pass
+and its semantic review measure answers.
+
 Checkpoint evidence is retained under `checkpoints/`. Temporary iteration reports
 belong in ignored `results/`. Use only synthetic conversations for these runs.
 
