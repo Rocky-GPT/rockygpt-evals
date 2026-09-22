@@ -92,9 +92,9 @@ python3 brain-reset/run.py --corpus brain-reset/graph-conversations.json \
 
 The first command reads the development-only `/v1/dev/graph/export`; the second
 uses the Dev UI's **Download graph** file. Path readiness says nothing about
-whether the Brain can use a path in chat: incoming convener edges, for example,
-exist but no current profile section follows them. Only the paid `run.py` pass
-and its semantic review measure answers.
+whether the Brain uses a path well in chat. Chat reaches relationships through
+`lookup_profile` sections, including `related` for either direction; only the
+paid `run.py` pass and its semantic review measure answers.
 
 Checkpoint evidence is retained under `checkpoints/`. Temporary iteration reports
 belong in ignored `results/`. Use only synthetic conversations for these runs.
