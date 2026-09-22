@@ -79,7 +79,9 @@ entities, blocked when something it needs is not published yet, and a mismatch
 when published data disagrees with the fixture. Expectations are checked even for
 blocked cases, so typos and renamed entities surface early. Mismatches fail, and
 so does any case short of ready in a phase marked `shipped`; mark a phase
-shipped once it lands. The first run found 7 of 26 ready (all `now` cases).
+shipped once it lands. The first run found 7 of 26 ready (all `now` cases); with
+organizations shipped it is 11 of 26 (see
+`checkpoints/2026-09-22-organizations/`).
 
 ```sh
 python3 brain-reset/check_graph_paths.py --base-url http://127.0.0.1:8000
