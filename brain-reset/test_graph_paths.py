@@ -92,6 +92,10 @@ class PathTests(unittest.TestCase):
         status, details = check_case(case({"resolve": "Public Safety", "expect": both}), self.graph)
         self.assertEqual(status, "mismatch")
         self.assertIn("resolves to Public Safety (Emergency)", details[0])
+        # A name with no reviewed alias must match nothing; any match is unsupported.
+        self.assertEqual(check_case(case({"resolve": "Potter Library", "expect": []}), self.graph), ("ready", []))
+        status, details = check_case(case({"resolve": "Birch", "expect": []}), self.graph)
+        self.assertEqual((status, details), ("mismatch", ["'Birch' resolves to Birch Tree Inn, expected no match"]))
         # The path after a blocked alias is still walked from the intended entities.
         convener = {"predicate": "convener", "direction": "out", "expect": [person("Emma C. Rainforth")]}
         blocked_alias = case({"resolve": "Computer Science", "expect": [{"kind": "program", "name": "Computer Science BS"}]}, [convener])
@@ -222,6 +226,7 @@ class CorpusTests(unittest.TestCase):
                 ({"phase": "now", "start": {"kind": "person"}, "hops": []}, "exactly one of name or code"),
                 ({"phase": "now", "start": person("A"), "hops": [{"predicate": "convener", "direction": "sideways"}]}, "out or in"),
                 ({"phase": "now", "start": person("A"), "hops": [], "extra": True}, "graph must contain only"),
+                ({"phase": "now", "start": {"resolve": "A", "expect": []}, "hops": [{"predicate": "convener", "direction": "out"}]}, "cannot start hops"),
                 ({"phase": "now", "start": group("A", select_at_least=0), "hops": []}, "positive integer"),
                 ({"phase": "now", "start": group("A", program=" "), "hops": []}, "program must be text"),
             ):

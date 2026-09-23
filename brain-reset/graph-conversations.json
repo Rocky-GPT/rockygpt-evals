@@ -13,7 +13,7 @@
     {"id": "program-faculty", "status": "shipped", "title": "Program to listed faculty from the catalog's explicit Program Faculty field"},
     {"id": "places", "status": "shipped", "title": "People and offices to buildings from published room numbers"},
     {"id": "schools", "status": "shipped", "title": "Programs and people to schools through a reviewed name mapping"},
-    {"id": "aliases", "status": "planned", "title": "Reviewed aliases, including deliberately ambiguous ones"},
+    {"id": "aliases", "status": "shipped", "title": "Reviewed aliases, including deliberately ambiguous ones"},
     {"id": "status", "status": "shipped", "title": "Published retired status for people"}
   ],
   "cases": [
@@ -434,12 +434,13 @@
       "tags": ["graph", "alias"],
       "graph": {
         "phase": "aliases",
-        "start": {"resolve": "Birch", "expect": [{"kind": "venue", "name": "Birch Tree Inn"}]},
-        "hops": []
+        "start": {"resolve": "Birch", "expect": []},
+        "hops": [],
+        "note": "Deliberately no alias: no Ramapo source calls the Birch Tree Inn 'Birch', and Birch Mansion is a separate building, so 'Birch' must match nothing."
       },
       "messages": [{"role": "user", "content": "What's the phone number for Birch?"}],
-      "expected_behaviors": ["Resolve 'Birch' to Birch Tree Inn and give its published directory phone, (201) 684-7592."],
-      "assertions": {"status_in": ["answered"], "min_citations": 1}
+      "expected_behaviors": ["'Birch' is not a published name or alias of any campus place; the Birch Tree Inn dining room and Birch Mansion both carry the word. Ask which place is meant instead of assuming the Birch Tree Inn, and give no phone number for 'Birch' as if it were a published match."],
+      "assertions": {"status_in": ["clarification"], "max_citations": 0}
     },
     {
       "id": "graph-alias-department-name",

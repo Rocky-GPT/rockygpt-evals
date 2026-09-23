@@ -61,6 +61,10 @@ Course subjects were proposed for this step, but building them now would make lo
 
 Revisit once caching lands (step 6) and a subject question fails.
 
+## Update: "Birch" is deliberately not an alias
+
+Decision of September 23: "Birch" is not added. `graph-alias-short-name` now expects the name to resolve to nothing: an unsupported match is the failure, and the chat turn must ask which place is meant rather than assume the Birch Tree Inn. The checker accepts an empty expectation for a name, and any match is a mismatch. `aliases` is now a shipped phase, and the corpus is **27 of 27 ready**.
+
 ## Rollback
 
 From `rockygpt-infra`, restore the schools release:
