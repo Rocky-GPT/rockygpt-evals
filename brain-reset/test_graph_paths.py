@@ -98,6 +98,80 @@ class PathTests(unittest.TestCase):
         self.assertEqual(check_case(blocked_alias, self.graph)[0], "mismatch")
 
 
+RECORD_GRAPH = {
+    **GRAPH,
+    "nodes": [*GRAPH["nodes"], {"id": "c2", "kind": "course", "name": "CALCULUS II", "aliases": ["MATH 122"]}],
+    "contextual_records": [
+        {"id": "g1", "record_type": "requirement_group", "label": "Math Electives", "rule": {"choose": {"at_least": 2}}},
+        {"id": "g2", "record_type": "requirement_group", "label": "Required Courses", "rule": {"choose": {"all": True}}},
+        {"id": "g3", "record_type": "requirement_group", "label": "Required Courses", "rule": {"choose": None}},
+        {"id": "g4", "record_type": "requirement_group", "label": "General Education: Quantitative Reasoning",
+         "rule": None, "course_list": {"select_count": 1, "choose": {"at_least": 1}}},
+    ],
+    "record_edges": [
+        *({"id": f"record-edge:{i}", "type": "requirement_group", "source": program, "target": group}
+          for i, (program, group) in enumerate([("p1", "g1"), ("p1", "g2"), ("p1", "g4"), ("p2", "g3"), ("p2", "g4")])),
+        *({"id": f"record-edge:{i + 5}", "type": "requirement_option", "source": group, "target": course}
+          for i, (group, course) in enumerate([("g1", "c2"), ("g2", "c1"), ("g3", "c1"), ("g4", "c1")])),
+    ],
+}
+
+
+def group(label, **constraints):
+    return {"record": "requirement_group", "label": label, **constraints}
+
+
+class RecordPathTests(unittest.TestCase):
+    def setUp(self):
+        self.graph = Graph(RECORD_GRAPH)
+        self.program = {"kind": "program", "name": "Computer Science BS"}
+
+    def test_programs_reach_groups_and_groups_reach_course_options(self):
+        groups = {"predicate": "requirement_group", "direction": "out",
+                  "expect_includes": [group("Math Electives", select_at_least=2), group("Required Courses")]}
+        options = {"predicate": "requirement_option", "direction": "out", "expect_includes": [{"kind": "course", "code": "MATH 122"}]}
+        self.assertEqual(check_case(case(self.program, [groups, options]), self.graph), ("ready", []))
+        shared = {"predicate": "requirement_option", "direction": "out", "expect_count": 1}
+        self.assertEqual(check_case(case(group("General Education: Quantitative Reasoning", select_at_least=1), [shared]), self.graph),
+                         ("ready", []))
+
+    def test_a_shared_label_needs_its_program_or_a_narrow_hop(self):
+        reverse = {"predicate": "requirement_option", "direction": "in", "expect_includes": [
+            group("Required Courses", program="Computer Science BS"), group("Required Courses", program="Accounting BS"),
+            group("General Education: Quantitative Reasoning")]}
+        self.assertEqual(check_case(case({"kind": "course", "code": "CMPS 147"}, [reverse]), self.graph), ("ready", []))
+        ambiguous = {"predicate": "requirement_option", "direction": "in", "expect_includes": [group("Required Courses")]}
+        status, details = check_case(case({"kind": "course", "code": "CMPS 147"}, [ambiguous]), self.graph)
+        self.assertEqual(status, "mismatch")
+        self.assertIn("expected one requirement_group 'Required Courses' where the path reaches it, found 2", details)
+        self.assertEqual(check_case(case(group("Required Courses"), [ambiguous]), self.graph)[0], "mismatch")
+
+    def test_published_choices_and_program_scope_must_agree(self):
+        wrong_count = {"predicate": "requirement_group", "direction": "out", "expect_includes": [group("Math Electives", select_at_least=3)]}
+        status, details = check_case(case(self.program, [wrong_count]), self.graph)
+        self.assertEqual(status, "mismatch")
+        self.assertIn("publishes choose {'at_least': 2}, expected at least 3", details[0])
+        uninterpreted = {"predicate": "requirement_option", "direction": "in",
+                         "expect_includes": [group("Required Courses", program="Accounting BS", select_at_least=1)]}
+        self.assertEqual(check_case(case({"kind": "course", "code": "CMPS 147"}, [uninterpreted]), self.graph)[0], "mismatch")
+        other_program = {"predicate": "requirement_group", "direction": "out", "expect_includes": [group("Math Electives")]}
+        status, details = check_case(case({"kind": "program", "name": "Accounting BS"}, [other_program]), self.graph)
+        self.assertEqual((status, details), ("mismatch", ["expected one requirement_group 'Math Electives' where the path reaches it, found 0"]))
+        scoped = {"predicate": "requirement_option", "direction": "in", "expect_includes": [group("Math Electives", program="Accounting BS")]}
+        status, details = check_case(case({"kind": "course", "code": "MATH 122"}, [scoped]), self.graph)
+        self.assertEqual((status, details), ("mismatch", ["no requirement_group 'Math Electives' of Accounting BS is published"]))
+
+    def test_record_typos_fail_even_when_the_walk_is_blocked(self):
+        blocked = {"predicate": "listed_faculty", "direction": "out", "expect_includes": [group("Math Electivs")]}
+        status, details = check_case(case(self.program, [blocked]), self.graph)
+        self.assertEqual(status, "mismatch")
+        self.assertEqual(details, ["no requirement_group 'Math Electivs' is published", "hop 1: predicate listed_faculty is not published"])
+        # Records a knowledge index or older export does not carry stay blocked, not mismatched.
+        status, details = check_case(case(self.program, [blocked]), Graph(GRAPH))
+        self.assertEqual((status, details), ("blocked", ["hop 1: predicate listed_faculty is not published",
+                                                         "no requirement_group records are published"]))
+
+
 class CorpusTests(unittest.TestCase):
     def test_graph_corpus_is_valid_for_the_runner_and_the_checker(self):
         corpus = load_corpus(DEFAULT_CORPUS)
@@ -117,6 +191,8 @@ class CorpusTests(unittest.TestCase):
                 ({"phase": "now", "start": {"kind": "person"}, "hops": []}, "exactly one of name or code"),
                 ({"phase": "now", "start": person("A"), "hops": [{"predicate": "convener", "direction": "sideways"}]}, "out or in"),
                 ({"phase": "now", "start": person("A"), "hops": [], "extra": True}, "graph must contain only"),
+                ({"phase": "now", "start": group("A", select_at_least=0), "hops": []}, "positive integer"),
+                ({"phase": "now", "start": group("A", program=" "), "hops": []}, "program must be text"),
             ):
                 path.write_text(json.dumps({**base, "cases": [{"id": "x", "graph": graph}]}))
                 with self.assertRaisesRegex(ValueError, message):

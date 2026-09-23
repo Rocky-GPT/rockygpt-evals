@@ -6,6 +6,11 @@ predicate, contextual record or alias it needs is not published yet, and a misma
 when published data disagrees with the fixture. Expectations are checked even for
 blocked cases, so a typo or a changed name surfaces before its phase ships.
 Mismatches fail the check, and so does any case short of ready in a shipped phase.
+
+Contextual records, such as requirement groups, are walked through the export's
+record edges. A record label is only unique within a hop's result (many programs
+have "Required Courses"), so a record expectation is matched there, optionally
+narrowed to the program that lists it, and its published choice is checked.
 """
 
 import argparse
@@ -44,6 +49,10 @@ def validate_spec(spec, where):
     if "record" in spec:
         if not text(spec["record"]) or not text(spec.get("label")):
             raise ValueError(f"{where}: a contextual record needs record and label text")
+        if "program" in spec and not text(spec["program"]):
+            raise ValueError(f"{where}: a record's program must be text")
+        if "select_at_least" in spec and (type(spec["select_at_least"]) is not int or spec["select_at_least"] < 1):
+            raise ValueError(f"{where}: select_at_least must be a positive integer")
     elif not text(spec.get("kind")) or sum(text(spec.get(key)) for key in ("name", "code")) != 1:
         raise ValueError(f"{where}: an entity needs a kind and exactly one of name or code")
 
@@ -99,19 +108,24 @@ class Graph:
         if not isinstance(payload.get("nodes"), list) or not isinstance(payload.get("edges"), list):
             raise ValueError("Graph JSON needs nodes and edges arrays (a graph export or knowledge index)")
         self.nodes = {node["id"]: node for node in payload["nodes"]}
-        self.edges = payload["edges"]
+        # A knowledge index or an export before schema 2 has no contextual records.
+        self.records = {record["id"]: record for record in payload.get("contextual_records") or []}
+        self.edges = payload["edges"] + [{key: edge[key] for key in ("source", "target", "type")}
+                                         for edge in payload.get("record_edges") or []]
         self.kinds = {node["kind"] for node in self.nodes.values()}
+        self.record_types = {record.get("record_type") for record in self.records.values()}
         self.predicates = {edge["type"] for edge in self.edges}
         snapshot = payload.get("snapshot") or {}
         self.dataset_version = snapshot.get("dataset_version") or payload.get("dataset_version")
 
     def names(self, ids):
-        labels = sorted(self.nodes[i]["name"] for i in ids)
+        labels = sorted(self.nodes[i]["name"] if i in self.nodes else self.records[i]["label"] for i in ids)
         return ", ".join(labels[:6]) + (f" and {len(labels) - 6} more" if len(labels) > 6 else "") if labels else "nothing"
 
-    def find(self, spec):
+    def find(self, spec, within=None):
+        """One entity by kind and exact name or code, or one record within a hop's result."""
         if "record" in spec:
-            raise Blocked(f"contextual {spec['record']} records are not in the graph")
+            return self.find_record(spec, within)
         if spec["kind"] not in self.kinds:
             raise Blocked(f"no {spec['kind']} entities are published")
         if "code" in spec:
@@ -121,6 +135,32 @@ class Graph:
         if len(found) != 1:
             raise Mismatch(f"expected one {spec['kind']} {spec.get('name') or spec.get('code')!r}, found {len(found)}")
         return found[0]
+
+    def find_record(self, spec, within):
+        if spec["record"] not in self.record_types:
+            raise Blocked(f"no {spec['record']} records are published")
+        described = f"{spec['record']} {spec['label']!r}"
+        found = {i for i, record in self.records.items() if record.get("record_type") == spec["record"]
+                 and normalize(record.get("label") or "") == normalize(spec["label"])}
+        if "program" in spec:
+            program = self.find({"kind": "program", "name": spec["program"]})
+            found = {edge["target"] for edge in self.edges if edge["type"] == "requirement_group"
+                     and edge["source"] == program and edge["target"] in found}
+            described += f" of {spec['program']}"
+        if not found:
+            raise Mismatch(f"no {described} is published")
+        if within is None:
+            # Without a hop result, only a start must be unique; an expectation just has to exist.
+            return None
+        if len(found & within) != 1:
+            raise Mismatch(f"expected one {described} where the path reaches it, found {len(found & within)}")
+        (record_id,) = found & within
+        if "select_at_least" in spec:
+            record = self.records[record_id]
+            choose = (record.get("rule") or {}).get("choose") or (record.get("course_list") or {}).get("choose")
+            if choose != {"at_least": spec["select_at_least"]}:
+                raise Mismatch(f"{described} publishes choose {choose}, expected at least {spec['select_at_least']}")
+        return record_id
 
     def resolve(self, value):
         key = normalize(value)
@@ -139,11 +179,13 @@ def check_case(case, graph):
     path = case["graph"]
     mismatches, blocks = [], []
 
-    def ids(specs):
+    def ids(specs, within=None):
         found, complete = set(), True
         for spec in specs:
             try:
-                found.add(graph.find(spec))
+                value = graph.find(spec, within)
+                if value is not None:
+                    found.add(value)
             except Blocked as reason:
                 blocks.append(str(reason))
                 complete = False
@@ -162,18 +204,22 @@ def check_case(case, graph):
                 blocks.append(f"alias {start['resolve']!r} is not published")
             elif hits != current:
                 mismatches.append(f"{start['resolve']!r} resolves to {graph.names(hits)}, expected {graph.names(current)}")
+    elif "record" in start:
+        # A starting record must be unique among all published records.
+        current = ids([start], set(graph.records))
     else:
         current = ids([start])
     for number, hop in enumerate(path["hops"], 1):
         before = len(blocks)
-        exact = ids(hop["expect"]) if "expect" in hop else None
-        includes = ids(hop["expect_includes"]) if "expect_includes" in hop else None
-        if current is None:
-            continue
-        try:
-            result = graph.step(current, hop)
-        except Blocked as reason:
-            blocks.append(f"hop {number}: {reason}")
+        result = None
+        if current is not None:
+            try:
+                result = graph.step(current, hop)
+            except Blocked as reason:
+                blocks.append(f"hop {number}: {reason}")
+        exact = ids(hop["expect"], result) if "expect" in hop else None
+        includes = ids(hop["expect_includes"], result) if "expect_includes" in hop else None
+        if result is None:
             current = None
             continue
         label = f"hop {number} ({hop['predicate']} {hop['direction']})"

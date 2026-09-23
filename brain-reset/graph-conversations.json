@@ -9,7 +9,7 @@
   "phases": [
     {"id": "now", "status": "shipped", "title": "Published relationships: convener, profile_course, organized_by (clubs)"},
     {"id": "organizations", "status": "shipped", "title": "Archway organizer groups as organization identities"},
-    {"id": "requirements", "status": "planned", "title": "Program requirement groups as contextual records with explicit course options"},
+    {"id": "requirements", "status": "shipped", "title": "Program requirement groups as contextual records with explicit course options"},
     {"id": "program-faculty", "status": "planned", "title": "Program to listed faculty from the catalog's explicit Program Faculty field"},
     {"id": "places", "status": "planned", "title": "People and offices to buildings from published room numbers"},
     {"id": "schools", "status": "planned", "title": "Programs and people to schools through a reviewed name mapping"},
@@ -227,14 +227,14 @@
       "tags": ["graph", "requirements"],
       "graph": {
         "phase": "requirements",
-        "start": {"kind": "program", "name": "Computer Science BS"},
+        "start": {"record": "requirement_group", "label": "Math Electives", "program": "Computer Science BS", "select_at_least": 2},
         "hops": [
-          {"predicate": "requirement_group", "direction": "out", "expect_includes": [{"record": "requirement_group", "label": "Math Electives", "select_at_least": 2}]},
           {"predicate": "requirement_option", "direction": "out", "expect_includes": [
             {"kind": "course", "code": "MATH 122"}, {"kind": "course", "code": "MATH 262"},
             {"kind": "course", "code": "MATH 353"}, {"kind": "course", "code": "MATH 370"}
           ]}
-        ]
+        ],
+        "note": "Starting from the program's own Math Electives group ties the options to that group, not to any Computer Science BS requirement."
       },
       "messages": [{"role": "user", "content": "How many math electives do I need for the Computer Science BS, and what are the options?"}],
       "expected_behaviors": ["At least 2 from the Math Electives group, which has 17 options: MATH 122, 124, 200, 225, 240, 245, 253, 262, 282, 290, 300, 305, 321, 339, 360 and 390, plus MATH 353 or MATH 370 as a single option. Keep the count attached to the group."],
