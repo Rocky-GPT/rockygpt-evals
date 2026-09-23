@@ -190,6 +190,19 @@ class ExternalIdTests(unittest.TestCase):
         self.assertEqual(check_case(case(start, [hop("1133424")]), Graph({"nodes": [building, office], "edges": graph.edges})), ("ready", []))
 
 
+class StatusTests(unittest.TestCase):
+    def test_an_expected_status_must_be_published_on_the_node(self):
+        person = {"id": "r1", "kind": "person", "name": "Retired Professor", "aliases": [], "status": "retired"}
+        graph = Graph({"nodes": [person], "edges": []})
+        expect = lambda status: case({"resolve": "Retired Professor", "expect": [
+            {"kind": "person", "name": "Retired Professor", "status": status}]})
+        self.assertEqual(check_case(expect("retired"), graph), ("ready", []))
+        del person["status"]
+        status, details = check_case(expect("retired"), graph)
+        self.assertEqual(status, "mismatch")
+        self.assertIn("has no status, expected retired", details[0])
+
+
 class CorpusTests(unittest.TestCase):
     def test_graph_corpus_is_valid_for_the_runner_and_the_checker(self):
         corpus = load_corpus(DEFAULT_CORPUS)
