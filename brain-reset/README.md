@@ -69,9 +69,8 @@ club's linked events, the options inside a requirement group. Each case declares
 its graph path and the roadmap phase that publishes it (`now`, `organizations`,
 `requirements`, `program-faculty`, `places`, `schools`, `aliases`). Expected
 facts come from `dev-profiles-organizers-20260922` and go stale as events pass.
-Predicate names for planned phases (`listed_faculty`, `office_at`,
-`located_at`, `part_of`) are provisional; rename them in the fixtures when the
-phase ships.
+Predicate names for planned phases (`office_at`, `located_at`, `part_of`) are
+provisional; rename them in the fixtures when the phase ships.
 
 `check_graph_paths.py` walks each declared path through a published graph
 export with no model calls. A case is ready when every hop reaches the expected
@@ -81,8 +80,9 @@ blocked cases, so typos and renamed entities surface early. Mismatches fail, and
 so does any case short of ready in a phase marked `shipped`; mark a phase
 shipped once it lands. The first run found 7 of 26 ready (all `now` cases); with
 organizations shipped it is 11 of 26 (see
-`checkpoints/2026-09-22-organizations/`), and with requirements 17 of 26 (see
-`checkpoints/2026-09-22-requirements/`).
+`checkpoints/2026-09-22-organizations/`), with requirements 17 of 26 (see
+`checkpoints/2026-09-22-requirements/`), and with program faculty 19 of 26 (see
+`checkpoints/2026-09-22-program-faculty/`).
 
 Requirement groups are contextual records, not entities: the export publishes
 them in `contextual_records` and connects them with `record_edges`, which the
