@@ -82,7 +82,7 @@ organizations shipped it is 11 of 26 (see
 `checkpoints/2026-09-22-requirements/`), with program faculty 19 of 26 (see
 `checkpoints/2026-09-22-program-faculty/`), with buildings 21 of 26 (see
 `checkpoints/2026-09-23-buildings/`), with schools 22 of 26 (see
-`checkpoints/2026-09-23-schools/`), and with aliases and status 27 of 27 (see
+`checkpoints/2026-09-23-schools/`), and with aliases and status 28 of 28 (see
 `checkpoints/2026-09-23-aliases/`). A name resolution may expect no entities: the
 name must then match nothing, which is how a deliberately unsupported alias such
 as "Birch" is tested. An entity expectation may name a `status`

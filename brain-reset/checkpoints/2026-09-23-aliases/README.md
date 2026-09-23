@@ -61,9 +61,21 @@ Course subjects were proposed for this step, but building them now would make lo
 
 Revisit once caching lands (step 6) and a subject question fails.
 
-## Update: "Birch" is deliberately not an alias
+## Update: "Birch" is a human-reviewed alias
 
-Decision of September 23: "Birch" is not added. `graph-alias-short-name` now expects the name to resolve to nothing: an unsupported match is the failure, and the chat turn must ask which place is meant rather than assume the Birch Tree Inn. The checker accepts an empty expectation for a name, and any match is a mismatch. `aliases` is now a shipped phase, and the corpus is **27 of 27 ready**.
+Final decision of September 23: approve "Birch" as a reviewed alias for the Birch Tree Inn, and keep Birch Mansion as its own canonical building. The lookup precedence is:
+- "Birch" → Birch Tree Inn
+- "Birch Tree Inn" → Birch Tree Inn
+- "Birch Mansion" → Birch Mansion
+
+The data side (`dc42802`) records this in `rockygpt-data/src/reference/campus-identity-reviews.json`:
+- "Birch" is applied by the Birch Tree Inn's persistent ID. The coverage report lists it under `human_reviewed_aliases`, apart from source-derived aliases.
+- Birch Mansion (Concept3D 1133345) is a building with `basis: human_reviewed` and no room prefixes.
+
+On the local release `dev-profiles-reviews-20260923` (Brain `d1038bc`, whose source is the same as `774ae6d`):
+- "Birch" resolves to the Birch Tree Inn, with directory phone (201) 684-7592.
+- "Birch Mansion" resolves to its own map record ([birch-verification.json](birch-verification.json)).
+- `graph-alias-short-name` expects the Birch Tree Inn again, and the new `graph-alias-birch-mansion` checks Birch Mansion's map location. The corpus is **28 of 28 ready**. The checker keeps its support for names that must match nothing.
 
 ## Rollback
 
