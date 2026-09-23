@@ -83,8 +83,11 @@ def load_corpus(path):
             raise ValueError(f"{where}: unknown phase {path.get('phase')!r}")
         start = path.get("start")
         if isinstance(start, dict) and "resolve" in start:
-            if not text(start["resolve"]) or not isinstance(start.get("expect"), list) or not start["expect"]:
+            if not text(start["resolve"]) or not isinstance(start.get("expect"), list):
                 raise ValueError(f"{where}: alias resolution needs text and expected entities")
+            # An empty expectation asserts the name resolves to nothing; there is nowhere to walk.
+            if not start["expect"] and path.get("hops"):
+                raise ValueError(f"{where}: a name expected to match nothing cannot start hops")
             for spec in start["expect"]:
                 validate_spec(spec, where)
                 if "record" in spec:
@@ -215,7 +218,11 @@ def check_case(case, graph):
         current = ids(start["expect"])
         if current is not None:
             hits = graph.resolve(start["resolve"])
-            if not hits:
+            if not start["expect"]:
+                # No reviewed name or alias may resolve; an unsupported match is the failure.
+                if hits:
+                    mismatches.append(f"{start['resolve']!r} resolves to {graph.names(hits)}, expected no match")
+            elif not hits:
                 blocks.append(f"alias {start['resolve']!r} is not published")
             elif hits != current:
                 mismatches.append(f"{start['resolve']!r} resolves to {graph.names(hits)}, expected {graph.names(current)}")
