@@ -70,8 +70,8 @@ its graph path and the roadmap phase that publishes it (`now`, `organizations`,
 `requirements`, `program-faculty`, `places`, `schools`, `aliases`). Expected
 facts come from `dev-profiles-organizers-20260922` and go stale as events pass.
 Predicate names for planned phases (`listed_faculty`, `office_at`,
-`located_at`, `part_of`, `requirement_group`, `requirement_option`) are
-provisional; rename them in the fixtures when the phase ships.
+`located_at`, `part_of`) are provisional; rename them in the fixtures when the
+phase ships.
 
 `check_graph_paths.py` walks each declared path through a published graph
 export with no model calls. A case is ready when every hop reaches the expected
@@ -81,7 +81,15 @@ blocked cases, so typos and renamed entities surface early. Mismatches fail, and
 so does any case short of ready in a phase marked `shipped`; mark a phase
 shipped once it lands. The first run found 7 of 26 ready (all `now` cases); with
 organizations shipped it is 11 of 26 (see
-`checkpoints/2026-09-22-organizations/`).
+`checkpoints/2026-09-22-organizations/`), and with requirements 17 of 26 (see
+`checkpoints/2026-09-22-requirements/`).
+
+Requirement groups are contextual records, not entities: the export publishes
+them in `contextual_records` and connects them with `record_edges`, which the
+checker walks like any other edge. A record expectation names its
+`record` type and `label`, is matched inside the hop's result (many programs
+have a "Required Courses" group), and may add the `program` that lists it and
+`select_at_least`, which must equal the published choice.
 
 ```sh
 python3 brain-reset/check_graph_paths.py --base-url http://127.0.0.1:8000
@@ -93,8 +101,9 @@ python3 brain-reset/run.py --corpus brain-reset/graph-conversations.json \
 The first command reads the development-only `/v1/dev/graph/export`; the second
 uses the Dev UI's **Download graph** file. Path readiness says nothing about
 whether the Brain uses a path well in chat. Chat reaches relationships through
-`lookup_profile` sections, including `related` for either direction; only the
-paid `run.py` pass and its semantic review measure answers.
+`lookup_profile` sections, including `related` for either direction and
+`requirements` for a program's requirement groups; only the paid `run.py` pass
+and its semantic review measure answers.
 
 Checkpoint evidence is retained under `checkpoints/`. Temporary iteration reports
 belong in ignored `results/`. Use only synthetic conversations for these runs.
