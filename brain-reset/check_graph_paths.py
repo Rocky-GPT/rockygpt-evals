@@ -57,8 +57,8 @@ def validate_spec(spec, where):
             raise ValueError(f"{where}: select_at_least must be a positive integer")
     elif not text(spec.get("kind")) or sum(text(spec.get(key)) for key in ("name", "code")) != 1:
         raise ValueError(f"{where}: an entity needs a kind and exactly one of name or code")
-    elif any(key in spec and not text(spec[key]) for key in EXTERNAL_IDS):
-        raise ValueError(f"{where}: an external ID must be text")
+    elif any(key in spec and not text(spec[key]) for key in (*EXTERNAL_IDS, "status")):
+        raise ValueError(f"{where}: an external ID or status must be text")
 
 
 def load_corpus(path):
@@ -145,6 +145,10 @@ class Graph:
                     binding.get("collection") == collection and spec[key] in binding.get("source_record_keys", [])
                     for binding in bindings):
                 raise Mismatch(f"{spec['kind']} {spec.get('name') or spec.get('code')!r} is not {key} {spec[key]}")
+        # A published status, such as retired, is part of the node.
+        if "status" in spec and self.nodes[found[0]].get("status") != spec["status"]:
+            status = self.nodes[found[0]].get("status") or "no status"
+            raise Mismatch(f"{spec['kind']} {spec.get('name') or spec.get('code')!r} has {status}, expected {spec['status']}")
         return found[0]
 
     def find_record(self, spec, within):

@@ -13,7 +13,8 @@
     {"id": "program-faculty", "status": "shipped", "title": "Program to listed faculty from the catalog's explicit Program Faculty field"},
     {"id": "places", "status": "shipped", "title": "People and offices to buildings from published room numbers"},
     {"id": "schools", "status": "shipped", "title": "Programs and people to schools through a reviewed name mapping"},
-    {"id": "aliases", "status": "planned", "title": "Reviewed aliases, including deliberately ambiguous ones"}
+    {"id": "aliases", "status": "planned", "title": "Reviewed aliases, including deliberately ambiguous ones"},
+    {"id": "status", "status": "shipped", "title": "Published retired status for people"}
   ],
   "cases": [
     {
@@ -452,6 +453,19 @@
       "messages": [{"role": "user", "content": "How do I contact Potter Library?"}],
       "expected_behaviors": ["Resolve Potter Library to the Library directory entry and give refdesk@ramapo.edu and (201) 684-7578."],
       "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "graph-retired-faculty-status",
+      "tags": ["graph", "status"],
+      "graph": {
+        "phase": "status",
+        "start": {"resolve": "Robert Becklen", "expect": [{"kind": "person", "name": "Robert Becklen", "status": "retired"}]},
+        "hops": [],
+        "note": "His directory record publishes status retired; the identity carries that status wherever he is named."
+      },
+      "messages": [{"role": "user", "content": "Is Robert Becklen still teaching psychology at Ramapo?"}],
+      "expected_behaviors": ["Say his directory record and faculty profile mark him as retired (Associate Professor of Psychology - Retired). Do not present him as current faculty or suggest he teaches current courses."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
     }
   ]
 }

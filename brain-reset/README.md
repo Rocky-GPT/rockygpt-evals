@@ -81,8 +81,10 @@ organizations shipped it is 11 of 26 (see
 `checkpoints/2026-09-22-organizations/`), with requirements 17 of 26 (see
 `checkpoints/2026-09-22-requirements/`), with program faculty 19 of 26 (see
 `checkpoints/2026-09-22-program-faculty/`), with buildings 21 of 26 (see
-`checkpoints/2026-09-23-buildings/`), and with schools 22 of 26 (see
-`checkpoints/2026-09-23-schools/`). A `concept3d_id` on a building
+`checkpoints/2026-09-23-buildings/`), with schools 22 of 26 (see
+`checkpoints/2026-09-23-schools/`), and with aliases and status 26 of 27 (see
+`checkpoints/2026-09-23-aliases/`). An entity expectation may name a `status`
+(for example `retired`), which the node must publish. A `concept3d_id` on a building
 expectation must match the building's published map location when the graph
 carries source bindings (an export does; a knowledge index does not).
 
