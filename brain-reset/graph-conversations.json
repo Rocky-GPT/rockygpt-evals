@@ -12,7 +12,7 @@
     {"id": "requirements", "status": "shipped", "title": "Program requirement groups as contextual records with explicit course options"},
     {"id": "program-faculty", "status": "shipped", "title": "Program to listed faculty from the catalog's explicit Program Faculty field"},
     {"id": "places", "status": "shipped", "title": "People and offices to buildings from published room numbers"},
-    {"id": "schools", "status": "planned", "title": "Programs and people to schools through a reviewed name mapping"},
+    {"id": "schools", "status": "shipped", "title": "Programs and people to schools through a reviewed name mapping"},
     {"id": "aliases", "status": "planned", "title": "Reviewed aliases, including deliberately ambiguous ones"}
   ],
   "cases": [
@@ -387,13 +387,13 @@
         "phase": "schools",
         "start": {"kind": "program", "name": "Computer Science BS"},
         "hops": [
-          {"predicate": "convener", "direction": "out", "expect": [{"kind": "person", "name": "Scott Frees"}]},
-          {"predicate": "part_of", "direction": "out", "expect": [{"kind": "school", "name": "School of Science, Nursing, and Health"}]}
+          {"predicate": "part_of", "direction": "out", "expect": [{"kind": "school", "name": "School of Science, Nursing, and Health"}]},
+          {"predicate": "part_of", "direction": "in", "expect_includes": [{"kind": "program", "name": "Computer Science BS"}, {"kind": "person", "name": "Scott Frees"}]}
         ],
-        "note": "The program record says School of Theoretical and Applied Science; the faculty record uses the newer school name."
+        "note": "Program records publish former school names and faculty profiles current ones. The reviewed schools file (September 23, 2026) makes the School of Theoretical and Applied Science a former name of the School of Science, Nursing, and Health, so both reach the same school."
       },
       "messages": [{"role": "user", "content": "Which school is the Computer Science BS in, and is its convener in the same school?"}],
-      "expected_behaviors": ["The program record lists the School of Theoretical and Applied Science; Scott Frees's faculty profile lists the School of Science, Nursing, and Health. Report both with their sources. Without a reviewed mapping between the older and newer school names, do not claim they are the same school or different ones."],
+      "expected_behaviors": ["The program record lists the School of Theoretical and Applied Science, a reviewed former name of the School of Science, Nursing, and Health; Scott Frees's faculty profile lists the School of Science, Nursing, and Health. Say they are the same school, citing both records and the former-name mapping."],
       "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
     },
     {
