@@ -172,6 +172,24 @@ class RecordPathTests(unittest.TestCase):
                                                          "no requirement_group records are published"]))
 
 
+class ExternalIdTests(unittest.TestCase):
+    def test_a_building_must_be_the_named_map_location_when_bindings_are_published(self):
+        building = {"id": "b1", "kind": "building", "name": "Academic Building D", "aliases": [],
+                    "source_bindings": [{"collection": "buildings", "source_key": "campus-map", "source_record_keys": ["1133371"]}]}
+        office = {"id": "o1", "kind": "office", "name": "Registrar", "aliases": []}
+        graph = Graph({"nodes": [building, office], "edges": [{"source": "o1", "target": "b1", "type": "located_at"}]})
+        hop = lambda location: {"predicate": "located_at", "direction": "out", "expect": [
+            {"kind": "building", "name": "Academic Building D", "concept3d_id": location}]}
+        start = {"kind": "office", "name": "Registrar"}
+        self.assertEqual(check_case(case(start, [hop("1133371")]), graph), ("ready", []))
+        status, details = check_case(case(start, [hop("1133424")]), graph)
+        self.assertEqual(status, "mismatch")
+        self.assertIn("is not concept3d_id 1133424", details[0])
+        # A knowledge index has no bindings to check against.
+        del building["source_bindings"]
+        self.assertEqual(check_case(case(start, [hop("1133424")]), Graph({"nodes": [building, office], "edges": graph.edges})), ("ready", []))
+
+
 class CorpusTests(unittest.TestCase):
     def test_graph_corpus_is_valid_for_the_runner_and_the_checker(self):
         corpus = load_corpus(DEFAULT_CORPUS)
