@@ -212,7 +212,8 @@ class CorpusTests(unittest.TestCase):
         corpus = load_corpus(DEFAULT_CORPUS)
         runner_cases = load_cases(DEFAULT_CORPUS)
         self.assertEqual([case["id"] for case in runner_cases], [case["id"] for case in corpus["cases"]])
-        self.assertTrue(20 <= len(corpus["cases"]) <= 30)
+        # A small corpus by design; the subjects phase took it past 30.
+        self.assertTrue(20 <= len(corpus["cases"]) <= 35)
         used = {case["graph"]["phase"] for case in corpus["cases"]}
         self.assertEqual(used, {phase["id"] for phase in corpus["phases"]})
         self.assertTrue(all(case["graph"]["hops"] or "resolve" in case["graph"]["start"] for case in corpus["cases"]))

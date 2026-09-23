@@ -14,7 +14,8 @@
     {"id": "places", "status": "shipped", "title": "People and offices to buildings from published room numbers"},
     {"id": "schools", "status": "shipped", "title": "Programs and people to schools through a reviewed name mapping"},
     {"id": "aliases", "status": "shipped", "title": "Reviewed aliases, including deliberately ambiguous ones"},
-    {"id": "status", "status": "shipped", "title": "Published retired status for people"}
+    {"id": "status", "status": "shipped", "title": "Published retired status for people"},
+    {"id": "subjects", "status": "shipped", "title": "Course subjects and the catalog courses filed under each code"}
   ],
   "cases": [
     {
@@ -480,6 +481,45 @@
       "messages": [{"role": "user", "content": "Is Robert Becklen still teaching psychology at Ramapo?"}],
       "expected_behaviors": ["Say his directory record and faculty profile mark him as retired (Associate Professor of Psychology - Retired). Do not present him as current faculty or suggest he teaches current courses."],
       "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "graph-subject-by-code",
+      "tags": ["graph", "subject"],
+      "graph": {
+        "phase": "subjects",
+        "start": {"resolve": "CMPS", "expect": [{"kind": "subject", "name": "Computer Science (CMPS)"}]},
+        "hops": [{"predicate": "includes_course", "direction": "out", "expect_count": 63, "expect_includes": [{"kind": "course", "code": "CMPS 147"}]}],
+        "note": "A subject answers to its code only in lookup (reviewed 2026-09-23); graph-alias-ambiguous-program keeps 'Computer Science' on the four programs."
+      },
+      "messages": [{"role": "user", "content": "What CMPS courses are in the catalog?"}],
+      "expected_behaviors": ["List catalog courses whose code starts with CMPS, such as CMPS 147, and say the catalog lists 63. Say these are catalog descriptions, not current sections."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "graph-subject-short-form",
+      "tags": ["graph", "subject", "search"],
+      "graph": {
+        "phase": "subjects",
+        "start": {"kind": "course", "code": "CMPS 147"},
+        "hops": [{"predicate": "includes_course", "direction": "in", "expect": [{"kind": "subject", "name": "Computer Science (CMPS)"}]}],
+        "note": "Course search reads 'CS' as CMPS through the curated short forms; before subjects it returned accounting and art history courses."
+      },
+      "messages": [{"role": "user", "content": "What CS classes can I take?"}],
+      "expected_behaviors": ["Read 'CS' as Computer Science (CMPS) and list CMPS catalog courses. No accounting, art history or other subjects' courses. Say these are catalog descriptions, not current sections or seats."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "graph-subject-unnamed-code",
+      "tags": ["graph", "subject"],
+      "graph": {
+        "phase": "subjects",
+        "start": {"resolve": "LITR", "expect": [{"kind": "subject", "name": "LITR"}]},
+        "hops": [{"predicate": "includes_course", "direction": "out", "expect_count": 158, "expect_includes": [{"kind": "course", "code": "LITR 101"}]}],
+        "note": "The catalog's department list names no subject LITR, so it keeps its code; 'literature' finds it in course search through the curated short forms."
+      },
+      "messages": [{"role": "user", "content": "What literature courses are offered?"}],
+      "expected_behaviors": ["List LITR catalog courses, such as LITR 101, and say the catalog lists 158. Do not invent a department name for LITR."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
     }
   ]
 }
