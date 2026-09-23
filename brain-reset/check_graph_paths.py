@@ -24,6 +24,8 @@ DEFAULT_CORPUS = Path(__file__).with_name("graph-conversations.json")
 PHASE_STATUSES = {"shipped", "planned"}
 HOP_KEYS = {"predicate", "direction", "expect", "expect_includes", "expect_count"}
 PATH_KEYS = {"phase", "start", "hops", "leaf", "note"}
+# An external ID an entity expectation may name, and the linked collection whose keys hold it.
+EXTERNAL_IDS = {"concept3d_id": "buildings"}
 
 
 class Blocked(Exception):
@@ -55,6 +57,8 @@ def validate_spec(spec, where):
             raise ValueError(f"{where}: select_at_least must be a positive integer")
     elif not text(spec.get("kind")) or sum(text(spec.get(key)) for key in ("name", "code")) != 1:
         raise ValueError(f"{where}: an entity needs a kind and exactly one of name or code")
+    elif any(key in spec and not text(spec[key]) for key in EXTERNAL_IDS):
+        raise ValueError(f"{where}: an external ID must be text")
 
 
 def load_corpus(path):
@@ -134,6 +138,13 @@ class Graph:
             found = [i for i, node in self.nodes.items() if node["kind"] == spec["kind"] and normalize(node["name"]) == normalize(spec["name"])]
         if len(found) != 1:
             raise Mismatch(f"expected one {spec['kind']} {spec.get('name') or spec.get('code')!r}, found {len(found)}")
+        # An export carries each node's source bindings; a knowledge index does not.
+        bindings = self.nodes[found[0]].get("source_bindings")
+        for key, collection in EXTERNAL_IDS.items():
+            if key in spec and bindings is not None and not any(
+                    binding.get("collection") == collection and spec[key] in binding.get("source_record_keys", [])
+                    for binding in bindings):
+                raise Mismatch(f"{spec['kind']} {spec.get('name') or spec.get('code')!r} is not {key} {spec[key]}")
         return found[0]
 
     def find_record(self, spec, within):

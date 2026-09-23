@@ -69,8 +69,8 @@ club's linked events, the options inside a requirement group. Each case declares
 its graph path and the roadmap phase that publishes it (`now`, `organizations`,
 `requirements`, `program-faculty`, `places`, `schools`, `aliases`). Expected
 facts come from `dev-profiles-organizers-20260922` and go stale as events pass.
-Predicate names for planned phases (`office_at`, `located_at`, `part_of`) are
-provisional; rename them in the fixtures when the phase ships.
+The predicate name for the planned schools phase (`part_of`) is provisional;
+rename it in the fixtures when the phase ships.
 
 `check_graph_paths.py` walks each declared path through a published graph
 export with no model calls. A case is ready when every hop reaches the expected
@@ -81,8 +81,11 @@ so does any case short of ready in a phase marked `shipped`; mark a phase
 shipped once it lands. The first run found 7 of 26 ready (all `now` cases); with
 organizations shipped it is 11 of 26 (see
 `checkpoints/2026-09-22-organizations/`), with requirements 17 of 26 (see
-`checkpoints/2026-09-22-requirements/`), and with program faculty 19 of 26 (see
-`checkpoints/2026-09-22-program-faculty/`).
+`checkpoints/2026-09-22-requirements/`), with program faculty 19 of 26 (see
+`checkpoints/2026-09-22-program-faculty/`), and with buildings 21 of 26 (see
+`checkpoints/2026-09-23-buildings/`). A `concept3d_id` on a building
+expectation must match the building's published map location when the graph
+carries source bindings (an export does; a knowledge index does not).
 
 Requirement groups are contextual records, not entities: the export publishes
 them in `contextual_records` and connects them with `record_edges`, which the
