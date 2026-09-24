@@ -35,3 +35,5 @@ Ground truth from the release: Library (Main Building) is open Friday 7:45am–6
 2. **"Ramapo library" resolves to nothing.** Names resolve only as an exact name or reviewed alias, and the model added the college name. The answer was still right because the model fell back to search. A resolver that drops a leading "Ramapo" would fix this for every entity, not only the Library.
 3. **Location questions don't reach the placement.** The Library's `located_at` relationship to the Peter P. Mercer Learning Commons is reachable only through `lookup_profile` with the `related` section. The model searched contacts instead. The Library's directory entry has no room, so its draft had no support, and the reviewer rejected it.
 4. **The first hours question in case 2 skipped the graph.** It went straight to a campus-hours search and gave a correct exact answer. The router is off, so this path choice varies from turn to turn.
+
+After the Brain fixes for findings 2 and 3, the [rerun](../2026-09-24-library-graph-rerun/README.md) answered all seven turns correctly.
