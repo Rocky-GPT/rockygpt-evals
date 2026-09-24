@@ -2,7 +2,7 @@
 
 Every page of Ramapo's student office sites is now captured, published as cited documents, and searchable. Before this, the six service crawls held 106 pages in total, and offices such as Financial Aid, Student Accounts, Scholarships, OSS, ITS, Testing and Title IX had none.
 
-**Result:** in a search-only check with no model calls, 24 of 28 office questions now reach the office's own pages in the top 4, up from 3 of 28. The four remaining cases are covered in the search check section: three are answered correctly by another office's site, and one is a real miss. The required benchmark cases stay at 9 of 10. Document search is about three times slower. Human review is pending. The verdicts are the agent's.
+**Result:** in a search-only check with no model calls, 24 of 28 office questions now reach the office's own pages in the top 4, up from 3 of 28. The four remaining cases are covered in the search check section: three are answered correctly by another office's site, and one is a real miss. The required benchmark cases stay at 9 of 10. Document search is about three times slower. The dev Brain now serves this release. Human review is pending. The verdicts are the agent's.
 
 ## What ran
 
@@ -11,7 +11,7 @@ Every page of Ramapo's student office sites is now captured, published as cited 
 | Data | `rockygpt-data` `653f01c` (dev): `60604b0` paced crawling, compressed source HTML and the challenge check fix, `1a0b454` and `867832f` repeated blocks written once, `ccff1e4` the office source, `4ee2d90` browser user agent by default, `653f01c` redirect duplicates left out |
 | Dataset | `dev-profiles-offices-20260924-r3` in `rockygpt_profiles_dev_offices_20260924` (port 55434), copied from `dev-profiles-library-hours-20260924` |
 | Search check | [search_check.py](search_check.py) with the Brain's own `CampusData.search`, Brain `f8f85fd`, run in-process. Before: `dev-profiles-links-20260924`, the release the dev Brain serves. After: r3 |
-| Dev Brain | not switched. It still serves `dev-profiles-links-20260924` |
+| Dev Brain | switched on the user's approval: `f8f85fd`, the revision already running, now serves r3 (103 documents, 21,230 passages) |
 
 ## Scope ([crawl-summary.json](crawl-summary.json))
 
@@ -71,7 +71,6 @@ Timings were taken on a machine using 9 GB of swap, so they are loose. The slowd
 ## Open
 
 - **Search time.** Storing each passage's heading vector at publish time would remove the per-query work. That needs a Brain change and a data schema change.
-- **Switching the dev Brain** to r3 is the user's call. The Brain is being worked on in parallel.
 - **Chat acceptance.** No paid chat turns were run. The development budget is nearly spent.
 - **Entity links.** Office pages are documents only. They are not linked to office entities, so a profile lookup of an office does not return its pages.
 - **Disk.** Free space fell to about 500 MB during the run. With the user's approval, 21 old local dev databases were dropped (~630 MB). They are listed in `.local-logs/office-pages-20260924/dropped-dev-databases.log`.
