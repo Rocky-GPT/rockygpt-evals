@@ -74,6 +74,26 @@ The verdicts come from the dev UI pass. Follow-ups carried the actual previous a
 7. **The budget ledger never releases failed calls.** An uncertain hold counts in every month. One new `model_timeout` hold ($0.31) came from this run; 32 holds remain open; development headroom after the run is $1.77.
 8. Minor: in the student UI, a "Campus Directory" chip linked to the registrar's online-course page (case 5). Birch has two extra Friday `dining_hours` rows reading "Hours unavailable".
 
+## After fixes
+
+Brain `1f0cf3b`, `3d17517` and `671ece1` (CI green), deployed to the dev Brain as `671ece1` (configuration hash `249a7b9c…`, same dataset). The failed questions were asked again in the dev UI ([after-fixes.json](after-fixes.json)). These are single re-runs, not a new full-suite pass:
+
+| Question | Before | After | How |
+| --- | --- | --- | --- |
+| 20 urgent-campus-safety | fail | pass | `urgent_safety` answer, then code adds Public Safety emergency 201-684-6666 and non-emergency 201-684-7432 from `critical_facts`, cited; one model call |
+| 11 turn 1 vegetarian dinner | fail | pass | `lookup_profile(... diet="vegetarian")` returned 7 of 7 (matches the database) |
+| Fall 2024 CS freshman year | fail | pass | "Computer Science" + plans resolves to the BS (`narrowed_by`), PATH TS1 correct |
+| CS BS cohort Fall 2021 | fail | pass | summaries of the Fall 2023-2026 plans are citable evidence for "not published" |
+| CS 4+1 with the Data Science MS | fail | pass on `671ece1` | on `3d17517` the variant came as a summary and the second lookup was blocked (`contextLimitedTools`); `plan="Data Science 4+1"` now fetches it in the first lookup, senior year exact |
+| 7 course catalog and seats | fail | 3 of 4 diagnostic runs pass | the earlier `unsupported_claim` did not recur; one run ended in `incomplete_draft` (output budget) |
+| 15 dinner, hours and events | fail | still fails | review timed out (`model_timeout`) this time; see below |
+
+Still open, and not fixable without changing deliberate limits:
+
+- **Static context:** instructions (25 KB) and tool definitions (19 KB) alone reach about 99K of the 128K `input_bound`, which counts 2 bytes per byte plus 8 KB. About 28K is left for history and all retrieved evidence, which causes most truncation and blocked second lookups. The fixes were held to +148 bytes of static text.
+- **Turn time:** a 45 s turn with review taking 10-30 s leaves multi-part answers (case 15) timing out.
+- **Incomplete drafts:** `draft_output_tokens` 2400 includes reasoning; long drafts occasionally end incomplete (HTTP 502).
+
 ## Cost
 
 45 answered or attempted turns cost $2.01 (student UI $0.62, dev UI $1.39), plus one unsettled $0.31 timeout hold.
