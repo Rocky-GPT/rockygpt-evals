@@ -1,6 +1,6 @@
 # Brain behavior verification
 
-`conversations.json` is the fixed 21-conversation / 28-turn acceptance suite.
+`conversations.json` is the fixed 22-conversation / 29-turn acceptance suite.
 `run.py` sends complete, actual generated history on every follow-up. Its machine
 checks validate the public contract; semantic review must compare every answer
 with the current-turn evidence and the written expectations. A runtime model
