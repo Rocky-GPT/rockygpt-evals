@@ -70,7 +70,7 @@ Timings were taken on a machine using 9 GB of swap, so they are loose. The slowd
 
 ## Open
 
-- **Search time.** Storing each passage's heading vector at publish time would remove the per-query work. That needs a Brain change and a data schema change.
+- **Search time.** Fixed on 2026-09-25 by a heading path index and an index-driven query with the same ranking: median 330 to 70 ms on the dev database. See [2026-09-25-document-search-speed](../2026-09-25-document-search-speed/README.md).
 - **Chat acceptance.** No paid chat turns were run. The development budget is nearly spent.
 - **Entity links.** Office pages are documents only. They are not linked to office entities, so a profile lookup of an office does not return its pages.
 - **Disk.** Free space fell to about 500 MB during the run. With the user's approval, 21 old local dev databases were dropped (~630 MB). They are listed in `.local-logs/office-pages-20260924/dropped-dev-databases.log`.
