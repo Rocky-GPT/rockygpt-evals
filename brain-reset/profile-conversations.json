@@ -1,0 +1,55 @@
+{
+  "cases": [
+    {
+      "id": "profile-csi-followups",
+      "messages": [],
+      "expected_behaviors": ["Resolve CSI through curated links; keep source scopes and retrieve fresh evidence on follow-ups."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "What time does CSI close today, and what is their phone number?", "expected_behaviors": ["Use the linked profile for applicable New York date hours and contact; midnight is next-day midnight. State any availability uncertainty."]},
+        {"user": "And what is their email?", "expected_behaviors": ["Resolve the same entity from the actual prior conversation and retrieve the email selectively."]},
+        {"user": "Does that mean staff will answer the phone until closing?", "expected_behaviors": ["Do not infer staff or phone availability from operating hours. Explain that the evidence does not establish it."], "assertions": {"status_in": ["answered", "partial", "unavailable"], "min_citations": 0}}
+      ]
+    },
+    {
+      "id": "profile-professor-courses",
+      "messages": [{"role": "user", "content": "What are Professor Scott Frees's contact details, and which courses are listed on his faculty profile?"}],
+      "expected_behaviors": ["Use contact and faculty records for the same person. Preserve the listed courses as undated profile information, without claiming current teaching assignments."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "profile-program-convener",
+      "messages": [],
+      "expected_behaviors": ["Follow an explicitly evidenced program-to-person convener relationship and retrieve that person's contact evidence."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1},
+      "turns": [
+        {"user": "Who is the convener of the Computer Science program?", "expected_behaviors": ["Name a convener only if explicit program evidence supports the relationship; do not promote an ingestion fallback to verified fact."]},
+        {"user": "What is that person's email?", "expected_behaviors": ["Follow the resolved person identity and cite the linked contact source, without guessing from the program name."]}
+      ]
+    },
+    {
+      "id": "profile-dining-date-meal",
+      "messages": [{"role": "user", "content": "What is on the lunch menu at Birch Tree Inn on September 21, 2026, and what are lunch hours there on that date?"}],
+      "expected_behaviors": ["Use that venue's date-specific lunch menu and applicable lunch period, retaining schedule exceptions. Overall venue hours must not substitute for lunch hours. Explain missing meal hours without hiding available menu information."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    },
+    {
+      "id": "profile-unfamiliar-entity",
+      "messages": [{"role": "user", "content": "What are the hours and phone number for the Zorblax Student Teleportation Office?"}],
+      "expected_behaviors": ["Do not invent an entity or attach a similar office's records. No curated match is not proof of nonexistence; ask for clarification or state unavailable evidence."],
+      "assertions": {"status_in": ["clarification", "unavailable", "partial"], "max_citations": 0}
+    },
+    {
+      "id": "profile-regression-contact",
+      "messages": [{"role": "user", "content": "What is the phone number for Financial Aid?"}],
+      "expected_behaviors": ["Preserve existing exact contact retrieval and source-grounded rendering without forcing profile lookup."],
+      "assertions": {"status_in": ["answered"], "min_citations": 1}
+    },
+    {
+      "id": "profile-regression-broad-search",
+      "messages": [{"role": "user", "content": "What student clubs involve music? Give me a few options."}],
+      "expected_behaviors": ["Use existing broad campus search, preserve organization scope, and avoid treating one profile as the entire directory."],
+      "assertions": {"status_in": ["answered", "partial"], "min_citations": 1}
+    }
+  ]
+}
