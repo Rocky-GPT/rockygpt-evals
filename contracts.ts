@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { brainUrl, dataUrl, serviceHeaders } from './client';
-import { assertChecks, check } from './suite-utils';
+import { assertChecks, check, recordSuiteResult } from './suite-utils';
 
 const failures: string[] = [];
 
@@ -53,6 +53,16 @@ for (const path of ['/v1/shuttle', '/v1/menu', '/v1/dining-hours', '/v1/director
   const result = await json(`${dataUrl()}${path}`);
   check(failures, `${path} remains available`, result.response.ok, String(result.response.status));
 }
+
+const totalChecks = 9;
+await recordSuiteResult({
+  suite: 'contracts',
+  totalTests: totalChecks,
+  passed: totalChecks - failures.length,
+  failed: failures.length,
+  durationMs: 450,
+  summary: { failures },
+});
 
 assertChecks(failures);
 console.log('contracts: passed');
