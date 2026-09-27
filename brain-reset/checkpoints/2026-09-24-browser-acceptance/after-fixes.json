@@ -1,0 +1,156 @@
+{
+ "brain_commits": {
+  "1f0cf3b": "Give Public Safety's verified numbers with urgent safety guidance",
+  "3d17517": "Resolve plan requests to the program that publishes plans",
+  "671ece1": "Let a plan be named by its words in the first lookup"
+ },
+ "deployed": {
+  "revision": "671ece1f4d56f94b0309342041ceb2d933a44be5",
+  "configurationHash": "249a7b9ceec09613c997ccb02325d57dc4074db38e702f97648e9d77d6acb656",
+  "dataset": "dev-profiles-majors-20260924-r3"
+ },
+ "dev_ui_reruns": [
+  {
+   "case": "urgent-campus-safety",
+   "requestId": "9e2183e2-8171-44ba-aa88-eb633a9d5fe6",
+   "mode": "urgent_safety",
+   "status": "answered",
+   "modelCalls": 1,
+   "cost": 0.0258,
+   "verdict": "pass",
+   "note": "911 guidance first; code-rendered 'Ramapo College Public Safety: emergency 201-684-6666; non-emergency 201-684-7432.' cited to critical_facts safety.emergency_phone and safety.non_emergency_phone. Model guidance also mentions 988, which fits a crisis rather than being followed."
+  },
+  {
+   "case": "dining-correction-and-followup t1",
+   "requestId": "590056fa-f641-4767-9bea-6d423d916fb4",
+   "mode": "reviewed_prose",
+   "status": "answered",
+   "verdict": "pass",
+   "note": "lookup_profile(Birch, Dinner, diet=vegetarian) returned 7 of 7, not truncated; all 7 listed and cited; unlabeled items disclosed."
+  },
+  {
+   "case": "grad-plan-cs-cohort-2024",
+   "requestId": "80dae8c6-90f5-47ee-afdc-b82f33a8c772",
+   "mode": "reviewed_prose",
+   "status": "answered",
+   "verdict": "pass",
+   "note": "one lookup: 'Computer Science' + cohort Fall 2024 resolved to Computer Science BS (narrowed_by graduation_plans; MS, 4+1, Minor set aside); freshman year matches the Fall 2024 plan including PATH TS1; names the BS; 16.4 s."
+  },
+  {
+   "case": "grad-plan-unpublished-cohort",
+   "requestId": "b34ccac6-de6e-42bb-b260-fae10f8ed8b8",
+   "mode": "reviewed_prose",
+   "status": "answered",
+   "verdict": "pass",
+   "note": "cohort_not_published with summaries of Fall 2023-2026 base plans as evidence; answer says no Fall 2021 plan and lists published cohorts with 4 citations. Offers Fall 2023 as the closest reference with an advisor caveat (does not claim it applies)."
+  },
+  {
+   "case": "grad-plan-cs-4plus1 (3d17517)",
+   "requestId": "271f1304-e661-4f4b-beee-699697def678",
+   "verdict": "fail",
+   "note": "resolved to CS BS; 4 plans delivered untruncated (DS variant as summary); second lookup blocked by contextLimitedTools; draft rejected. Led to 671ece1."
+  },
+  {
+   "case": "grad-plan-cs-4plus1 (671ece1)",
+   "requestId": "f35d0287-f696-4c15-98bc-7c71e38d1a93",
+   "verdict": "pass",
+   "note": "first lookup set plan=Data Science 4+1, resolved CS BS, returned the one plan whole; senior year matches the captured Fall 2026 plan exactly."
+  }
+ ],
+ "brain_metrics": [
+  {
+   "case": "verify-urgent-safety",
+   "turn": 1,
+   "requestId": "9e2183e2-8171-44ba-aa88-eb633a9d5fe6",
+   "status": "answered",
+   "responseMode": "urgent_safety",
+   "elapsedMs": 8144,
+   "modelCalls": 1,
+   "costNusd": 25795000,
+   "validationFailures": []
+  },
+  {
+   "case": "verify-dining-vegetarian",
+   "turn": 1,
+   "requestId": "590056fa-f641-4767-9bea-6d423d916fb4",
+   "status": "answered",
+   "responseMode": "reviewed_prose",
+   "elapsedMs": 20960,
+   "modelCalls": 3,
+   "costNusd": 59296500,
+   "validationFailures": []
+  },
+  {
+   "case": "verify-grad-cohort-2024",
+   "turn": 1,
+   "requestId": "80dae8c6-90f5-47ee-afdc-b82f33a8c772",
+   "status": "answered",
+   "responseMode": "reviewed_prose",
+   "elapsedMs": 16401,
+   "modelCalls": 3,
+   "costNusd": 59978000,
+   "validationFailures": []
+  },
+  {
+   "case": "verify-grad-unpublished",
+   "turn": 1,
+   "requestId": "b34ccac6-de6e-42bb-b260-fae10f8ed8b8",
+   "status": "answered",
+   "responseMode": "reviewed_prose",
+   "elapsedMs": 23037,
+   "modelCalls": 3,
+   "costNusd": 46840500,
+   "validationFailures": []
+  },
+  {
+   "case": "verify-grad-4plus1",
+   "turn": 1,
+   "requestId": "271f1304-e661-4f4b-beee-699697def678",
+   "status": "unavailable",
+   "responseMode": "safe_fallback",
+   "elapsedMs": 37478,
+   "modelCalls": 3,
+   "costNusd": 86343000,
+   "validationFailures": [
+    "unsupported_claim"
+   ]
+  },
+  {
+   "case": "verify-grad-4plus1",
+   "turn": 2,
+   "requestId": "f35d0287-f696-4c15-98bc-7c71e38d1a93",
+   "status": "answered",
+   "responseMode": "reviewed_prose",
+   "elapsedMs": 24889,
+   "modelCalls": 3,
+   "costNusd": 91968000,
+   "validationFailures": []
+  }
+ ],
+ "diagnostic_runs": {
+  "method": "diagnose.py ran run_turn in-process on the deployed build through the paid gateway and ledger, recording each draft and per-part review verdicts; results not stored in brain_ops.turns",
+  "course-catalog-versus-registration": [
+   {
+    "request": "56e68115",
+    "result": "partial, all parts supported (CMPS 110/130/147, CMPS 148 as follow-on, seats unverifiable)"
+   },
+   {
+    "request": "e6cee5ac",
+    "result": "partial, all parts supported"
+   },
+   {
+    "request": "bc33584b",
+    "result": "incomplete_draft after a 19.4 s second draft (no review); the API would return 502 invalid_model_output"
+   },
+   {
+    "request": "8da4b7f9",
+    "result": "partial, all parts supported"
+   }
+  ],
+  "dinner-and-evening-event": [
+   {
+    "result": "model_timeout during review (draft sent to review; review did not finish within the 45 s turn); the API would return 504"
+   }
+  ]
+ }
+}

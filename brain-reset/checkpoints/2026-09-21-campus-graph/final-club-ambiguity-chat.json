@@ -1,0 +1,70 @@
+{
+  "corpus": "/Users/danielrajakumar/code/RockyGPT/rockygpt-evals/brain-reset/club-event-conversations.json",
+  "started_at": "2026-09-21T23:15:20.856049+00:00",
+  "base_url": "http://127.0.0.1:8000",
+  "interval_seconds": 0,
+  "human_review": "pending",
+  "results": [
+    {
+      "id": "club-profile-contact-followup",
+      "tags": [],
+      "expected_behaviors": [
+        "Resolve the student organization independently of the similarly named academic program, preserve its source website, and retrieve contact details on a real follow-up."
+      ],
+      "human_review": "pending",
+      "turns": [
+        {
+          "http_status": 429,
+          "error": "{\"error\":{\"code\":\"model_quota_exhausted\",\"message\":\"RockyGPT is currently unavailable. Please use Ramapo's official resources for campus information.\",\"retryable\":false},\"reason\":\"model_quota_exhausted\",\"requestId\":\"2266d4d5-a77f-4f94-a09e-18f3ed49a9e9\"}",
+          "elapsed_seconds": 5.017,
+          "turn": 1,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Tell me about the Computer Science Club and where I can find its official club page."
+            }
+          ],
+          "expected_behaviors": [
+            "Use the club identity or original organization evidence, not the Computer Science academic program. Cite the Archway organization page."
+          ],
+          "assertions": {
+            "status_in": [
+              "answered",
+              "partial"
+            ],
+            "min_citations": 1
+          },
+          "checks": [
+            {
+              "name": "request_succeeded",
+              "passed": false,
+              "detail": "{\"error\":{\"code\":\"model_quota_exhausted\",\"message\":\"RockyGPT is currently unavailable. Please use Ramapo's official resources for campus information.\",\"retryable\":false},\"reason\":\"model_quota_exhausted\",\"requestId\":\"2266d4d5-a77f-4f94-a09e-18f3ed49a9e9\"}"
+            }
+          ],
+          "machine_checks_passed": false
+        }
+      ],
+      "stop_reason": "http_429",
+      "not_run_turns": 1,
+      "machine_checks_passed": false,
+      "evaluated_at": "2026-09-21T23:15:25.872999+00:00"
+    }
+  ],
+  "stopped_reason": "http_429",
+  "not_run_cases": [
+    {
+      "id": "event-repeated-title-ambiguity",
+      "turns": 1,
+      "reason": "http_429"
+    }
+  ],
+  "summary": {
+    "cases": 1,
+    "planned_cases": 2,
+    "completed_turns": 1,
+    "not_run_turns": 2,
+    "machine_checks_passed_cases": 0,
+    "elapsed_seconds": 5.017,
+    "semantic_review": "pending"
+  }
+}
