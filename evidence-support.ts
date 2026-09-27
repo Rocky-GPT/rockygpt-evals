@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { holdsBack } from './claims';
 import { answerQuestion, CANNOT_VERIFY } from './client';
 import { assertChecks, check } from './suite-utils';
 
@@ -10,7 +11,8 @@ const traps = [
 ];
 for (const [index, message] of traps.entries()) {
   const result = await answerQuestion({ message, conversationId: `evidence-${index}`, responseMode: 'concise' });
-  const heldBack = result.route === 'ungrounded' || result.answer.includes(CANNOT_VERIFY) || /can(?:not|’t) verify/i.test(result.answer);
+  const words = result.answer.includes(CANNOT_VERIFY) || /can(?:not|’t) verify/i.test(result.answer);
+  const heldBack = result.route === 'ungrounded' || (await holdsBack(result.answer, words, message));
   check(failures, `unsupported claim ${index + 1} is held back`, heldBack, result.answer);
 }
 assertChecks(failures);

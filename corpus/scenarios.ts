@@ -11,6 +11,7 @@
  * boundaries even after the underlying schedule moves.
  */
 
+import { claimsNoMoreShuttles, claimsOpenNow, recallsMentioning, saysWhetherOpen } from '../claims';
 import { dataGet } from '../client';
 import {
   futureDepartures,
@@ -62,7 +63,8 @@ export interface Scenario {
   /** True when a correct answer must rest on campus evidence. */
   groundingExpected: boolean;
   expected: string;
-  grade: (answers: GradedAnswer[]) => Outcome;
+  /** May ask Jev (judge.ts), so it can be async. */
+  grade: (answers: GradedAnswer[]) => Outcome | Promise<Outcome>;
 }
 
 interface SearchResponse<T> {
@@ -122,11 +124,11 @@ export async function transportationScenarios(isoDate: string): Promise<Scenario
         now,
         groundingExpected: true,
         expected: `no further departures (${label})`,
-        grade: ([answer]) =>
-          /\b(no|none|last|final|no more|finished|done for)\b/i.test(answer.answer) &&
-          futureDepartures(trips, minutes).length === 0
-            ? 'pass'
-            : 'fail',
+        grade: async ([answer]) => {
+          const words = /\b(no|none|last|final|no more|finished|done for)\b/i.test(answer.answer);
+          const said = await claimsNoMoreShuttles(answer.answer, words, 'When is the next shuttle?');
+          return said && futureDepartures(trips, minutes).length === 0 ? 'pass' : 'fail';
+        },
       });
       return;
     }
@@ -255,6 +257,7 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
       const truth = isOpenAt(record.schedule, minutes);
       if (truth === null) continue;
       const slug = record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32);
+      const question = `Is ${record.name} open right now?`;
       scenarios.push({
         id: `hours-${slug}-${suffix}`,
         category: 'hours',
@@ -262,12 +265,12 @@ export async function hoursScenarios(isoDate: string): Promise<Scenario[]> {
         // boundaries and the between-windows gap are the cases the arithmetic
         // actually turns on.
         tier: suffix === 'mid-open' ? 'broad' : 'critical',
-        messages: [`Is ${record.name} open right now?`],
+        messages: [question],
         now: campusInstant(isoDate, minutes),
         groundingExpected: true,
         expected: `${truth ? 'open' : 'closed'} (${label}; ${record.schedule})`,
-        grade: ([answer]) => {
-          const stated = statesOpen(answer.answer);
+        grade: async ([answer]) => {
+          const stated = await claimsOpenNow(answer.answer, statesOpen(answer.answer), question);
           // An answer the grader cannot read is a limit of the grader, not a
           // wrong answer. Scoring it `fail` once turned a set of entirely
           // correct replies into a 0% category.
@@ -424,10 +427,17 @@ export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
       now,
       groundingExpected: true,
       expected: 'answers about the Bradley Center, resolving "that" to the shuttle time',
-      grade: (answers) => {
-        const final = lastOf(answers).answer.toLowerCase();
-        if (!final.includes('bradley')) return 'fail';
-        return statesOpen(lastOf(answers).answer) === null ? 'unscorable' : 'pass';
+      grade: async (answers) => {
+        const final = lastOf(answers).answer;
+        if (!final.toLowerCase().includes('bradley')) return 'fail';
+        const says = await saysWhetherOpen(
+          final,
+          'the Bradley Center',
+          statesOpen(final) === null ? null : true,
+          'Is the Bradley Center open before that?'
+        );
+        if (says === null) return 'unscorable';
+        return says ? 'pass' : 'fail';
       },
     },
     {
@@ -441,8 +451,10 @@ export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
       now,
       groundingExpected: false,
       expected: 'denies having *said* 7:00 AM (not merely that none exists)',
-      grade: (answers) => {
-        // Read the opening sentence only, and read it for what it addresses.
+      grade: async (answers) => {
+        // Jev reads the whole answer for what it says about the conversation.
+        // The word check below is its fallback, and reads the opening sentence
+        // only, for what it addresses.
         //
         // A correct denial necessarily quotes the time being denied — "No, I
         // did not mention a 7:00 AM shuttle" — so scanning the whole answer for
@@ -457,12 +469,24 @@ export async function discourseScenarios(isoDate: string): Promise<Scenario[]> {
         const opening = final.split(/(?<=[.!?])\s/)[0] ?? final;
         const CLAIM = /\b(mention(ed)?|tell|told|say|said|provide[d]?|gave|give)\b/i;
         const NEGATED = /\b(no|not|never|didn['\u2019]?t|don['\u2019]?t)\b/i;
+        const words = CLAIM.test(opening)
+          ? NEGATED.test(opening)
+            ? 'denies'
+            : 'agrees'
+          : /^yes\b/i.test(opening)
+            ? 'agrees'
+            : 'other';
 
-        if (CLAIM.test(opening)) return NEGATED.test(opening) ? 'pass' : 'fail';
-        if (/^yes\b/i.test(opening)) return 'fail';
-        // Neither addressed what was said nor agreed to it: the question was
-        // not answered, which is a failure rather than an unreadable answer.
-        return 'fail';
+        const verdict = await recallsMentioning(
+          final,
+          'a 7:00 AM shuttle',
+          words,
+          'Did you tell me about a 7:00 AM shuttle?'
+        );
+        // Only a denial passes. An answer that never addresses what was said
+        // did not answer the question, which is a failure rather than an
+        // unreadable answer.
+        return verdict === 'denies' ? 'pass' : 'fail';
       },
     },
   ];

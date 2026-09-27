@@ -27,6 +27,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Grader tests use a fake Jev, so they are free and need no key.
+      - name: Grader tests
+        run: npm run test:unit
+
   # The suites call deployed HTTP services and may spend real model tokens, so
   # they are not run on every push. Configure BRAIN_URL and DATA_URL secrets.
   suites:
@@ -48,4 +52,6 @@ jobs:
           BRAIN_URL: ${{ secrets.BRAIN_URL }}
           DATA_URL: ${{ secrets.DATA_URL }}
           STAGING_SERVICE_TOKEN: ${{ secrets.STAGING_SERVICE_TOKEN }}
+          # Optional. Without it, the word checks grade as before.
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
         run: npm run test:all
