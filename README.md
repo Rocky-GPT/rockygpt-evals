@@ -88,3 +88,17 @@ The TypeScript suites and `corpus/` reports predate the Brain restart and remain
 as historical artifacts. Their routing, state, and answer-shape expectations are
 not the acceptance criteria for the rebuilt Brain. Their existing npm commands
 are retained for deliberate historical comparisons.
+
+## Grading with Jev
+
+In the TypeScript suites and `corpus/`, checks that ask what an answer *claims*
+(open or closed right now, no more shuttles today, a fact held back, a denial of
+something never said) are read by Jev, TypeSafe's classifier, when
+`TYPESAFE_API_KEY` (or the Brain's `BRAIN_TYPESAFE_API_KEY`) is set. A run of
+about 120 answers costs about a cent.
+
+Jev only decides when it is at least 90% sure. Without a key, when a call
+fails, or when Jev is unsure, the old word check decides, exactly as before.
+Suites that use it print who graded what and what Jev cost, and the corpus
+results file stores both verdicts beside every answer, so a disagreement can be
+read rather than trusted. `npm run test:unit` tests the grader against a fake Jev.

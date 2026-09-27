@@ -1,6 +1,9 @@
 import { answerQuestion, type BrainAnswer, type ChatTurnV2 } from './client';
+import { graderSummary } from './judge';
 
 export function assertChecks(failures: string[]): void {
+  const graded = graderSummary();
+  if (graded) console.log(graded);
   if (failures.length) throw new Error(`\n${failures.map((failure) => `- ${failure}`).join('\n')}`);
 }
 
