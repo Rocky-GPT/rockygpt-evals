@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { holdsBack } from './claims';
 import { answerQuestion } from './client';
 import { assertChecks, check } from './suite-utils';
 
@@ -11,7 +12,14 @@ const general = await answerQuestion({ message: 'What is 2 + 2?', responseMode: 
 check(failures, 'general knowledge is answered', /\b4\b/.test(general.answer), general.answer);
 check(failures, 'general knowledge borrows no campus citation', general.citations.length === 0);
 
-const unknown = await answerQuestion({ message: 'What is Professor Zorbax’s office number?', responseMode: 'concise' });
-check(failures, 'unknown campus fact is not invented', unknown.citations.length === 0 || /verify|couldn|can’t|cannot/i.test(unknown.answer), unknown.answer);
+const unknownQuestion = 'What is Professor Zorbax’s office number?';
+const unknown = await answerQuestion({ message: unknownQuestion, responseMode: 'concise' });
+check(
+  failures,
+  'unknown campus fact is not invented',
+  unknown.citations.length === 0 ||
+    (await holdsBack(unknown.answer, /verify|couldn|can’t|cannot/i.test(unknown.answer), unknownQuestion)),
+  unknown.answer
+);
 assertChecks(failures);
 console.log('grounding: passed');
