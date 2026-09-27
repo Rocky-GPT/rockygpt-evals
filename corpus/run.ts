@@ -14,6 +14,7 @@
 import 'dotenv/config';
 import { writeFileSync } from 'node:fs';
 import { answerQuestion, type ChatTurnV2 } from '../client';
+import { graderSummary, takeJudgements, type Judgement } from '../judge';
 import {
   buildCorpus,
   type GradedAnswer,
@@ -62,6 +63,8 @@ interface ScenarioResult {
   id: string;
   category: string;
   tier: Tier;
+  /** The questions asked, so a regrade can hand them to the grader again. */
+  messages: string[];
   repetitions: number;
   /** Scored, but with one repetition lost to a transport failure. */
   degraded: boolean;
@@ -82,7 +85,7 @@ interface ScenarioResult {
   samples: string[];
   /** Every answer from every repetition, so a grader fix can be applied to a
    *  completed run offline instead of costing another one. */
-  transcripts: Array<{ outcome: Outcome; answers: string[]; routes: string[] }>;
+  transcripts: Array<{ outcome: Outcome; answers: string[]; routes: string[]; judgements?: Judgement[] }>;
 }
 
 async function runOnce(scenario: Scenario, run: number): Promise<GradedAnswer[]> {
@@ -147,13 +150,14 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
     // indistinguishable from a brain that gets everything wrong.
     const transportFailed = answers.some((entry) => entry.route === 'error');
     if (transportFailed) transportFailures += 1;
-    const outcome: Outcome = transportFailed ? 'unscorable' : scenario.grade(answers);
+    const outcome: Outcome = transportFailed ? 'unscorable' : await scenario.grade(answers);
     outcomes.push(outcome);
     routes.push(answers.map((entry) => entry.route));
     transcripts.push({
       outcome,
       answers: answers.map((entry) => entry.answer),
       routes: answers.map((entry) => entry.route),
+      judgements: takeJudgements(),
     });
     const final = answers[answers.length - 1];
     if (final.route === 'standard' && final.citations > 0) grounded += 1;
@@ -176,6 +180,7 @@ async function scoreScenario(scenario: Scenario): Promise<ScenarioResult> {
     scorableRuns: invalid ? 0 : scorable.length,
     id: scenario.id,
     category: scenario.category,
+    messages: scenario.messages,
     expected: scenario.expected,
     outcomes,
     routes,
@@ -282,6 +287,8 @@ if (unreadable) {
 }
 
 report(results);
+const graded = graderSummary();
+if (graded) console.log(`\n${graded}`);
 const outfile = `corpus/results-${LABEL}.json`;
 writeFileSync(
   outfile,
