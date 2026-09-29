@@ -16,9 +16,13 @@ Python 3.10+ is sufficient; the runner uses only the standard library. Start the
 Brain with its trusted database connection first. The runner needs only the Brain URL;
 it does not read service credentials or import either implementation.
 
+The harness's own tests include the evidence-gate checker's, which import the Brain and
+use pytest, so run them with the Brain's virtualenv (`npm run test:brain:harness`). Plain
+`python3 -m unittest` skips those three and fails without pytest (09-29).
+
 ```sh
 python3 brain-reset/run.py --validate
-python3 -m unittest discover -s brain-reset -p 'test_*.py'
+../rockygpt-brain/.venv/bin/python -m pytest -q brain-reset
 python3 brain-reset/run.py --base-url http://127.0.0.1:8000 --output brain-reset/results/latest.json
 ```
 
