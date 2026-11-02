@@ -41,7 +41,7 @@ export function dataUrl(): string {
 }
 
 export function serviceHeaders(): Record<string, string> {
-  const token = process.env.STAGING_SERVICE_TOKEN?.trim();
+  const token = (process.env.SERVICE_TOKEN || process.env.STAGING_SERVICE_TOKEN)?.trim();
   return token ? { 'x-rockygpt-environment-token': token } : {};
 }
 
