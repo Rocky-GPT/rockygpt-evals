@@ -17,6 +17,8 @@ Each item carries `kind` (small_talk, nonsense, support, crisis, cant_know, redi
 Chat small-talk dataset (botframework-cli `qna_chitchat_*`); Crafton Hills College's 2020 Helpbot
 log study (what students typed that the bot missed); post titles on r/rcnj; the rest generated.
 
+**Frozen 2026-11-03. Do not edit, reword or relabel.** `questions-frozen.sha256` holds the hash.
+
 **Builders: do not read this folder.** It holds the expected replies. Never tune the bot to it.
 Fix gaps at the root (data, graph, code), not per question.
 
