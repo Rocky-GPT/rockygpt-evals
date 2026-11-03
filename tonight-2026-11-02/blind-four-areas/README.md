@@ -11,10 +11,12 @@ refuses to start if the file changed.
 ## Run (once, on the laptop, Brain on :8013)
 
 ```
-python3 rockygpt-evals/tonight-2026-11-02/blind-four-areas/run_blind.py 8013 /tmp/blind-four-areas-results.json
+./rocky bulk file rockygpt-evals/tonight-2026-11-02/blind-four-areas --brain 8013 --out /tmp/blind-four-areas-results.json
 ```
 
-Two questions at a time (four at once hit the 52 s turn limit). Each row keeps the full response and
+From the workspace root (the one runner, `rocky bulk`; it checks the frozen hash first). Add
+`--prod` instead of `--brain 8013` to ask the live site. Two questions at a time, the default
+(four at once hit the 52 s turn limit). Each row keeps the full response and
 `answered_at`, so graders can judge date questions ("tonight", "this week") against the day asked.
 About $0.10 on Luna.
 
