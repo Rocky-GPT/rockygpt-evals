@@ -25,10 +25,10 @@ Fix gaps at the root (data, graph, code), not per question.
 ## Run (once, only after Dan says "run")
 
 ```
-python3 rockygpt-evals/messy-students-2026-11-03/run_messy.py /tmp/messy-results.json
+./rocky bulk file rockygpt-evals/messy-students-2026-11-03 --prod --out /tmp/messy-results.json
 ```
 
-Sends each `question` alone (single turn) to the live site's /api/chat, two at a time. Refuses to
+From the workspace root. Sends each `question` alone (single turn) to the live site's /api/chat, two at a time. Refuses to
 run if `questions-frozen.json` no longer matches `questions-frozen.sha256`. About $0.10 on Luna.
 
 ## Grade

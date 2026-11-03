@@ -27,11 +27,12 @@ four-writer set was. The check set is frozen by hash before the build starts and
 ## Run (laptop Brain, graph-only, diagnostics on)
 
 ```
-python3 rockygpt-evals/fresh-2026-11-03/run_fresh.py <port> practice /tmp/practice-results.json
-python3 rockygpt-evals/fresh-2026-11-03/run_fresh.py <port> check /tmp/check-results.json   # once
+./rocky bulk file rockygpt-evals/fresh-2026-11-03/practice.json --brain <port> --out /tmp/practice-results.json
+./rocky bulk file rockygpt-evals/fresh-2026-11-03/check-frozen.json --brain <port> --out /tmp/check-results.json   # once
 ```
 
-Two at a time. Under $0.30 per full run on Luna.
+From the workspace root; `practice-b.json` and `practice-c.json` run the same way, and `--only id1,id2`
+asks a few practice questions. The check set is hash-checked first. Two at a time. Under $0.30 per full run on Luna.
 
 ## Grade
 
