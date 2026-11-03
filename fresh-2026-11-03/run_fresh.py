@@ -2,6 +2,7 @@
 
   python3 run_fresh.py <port> practice <out.json>   # any number of times while building
   python3 run_fresh.py <port> practice-b <out.json> # the second practice set, the same way
+  python3 run_fresh.py <port> practice-c <out.json> # the third (events and clubs by topic), the same way
   python3 run_fresh.py <port> check <out.json>      # once, at the very end
 Talks to http://127.0.0.1:<port>/v1/chat with the diagnostics header, two questions at a time.
 Only the "question" text is sent, never the expected reply. The check set's hash is checked first,
@@ -17,10 +18,10 @@ if which == "check":
     want = (HERE / "check-frozen.sha256").read_text().split()[0]
     if hashlib.sha256(blob.encode()).hexdigest() != want:
         sys.exit("the frozen check set changed")
-elif which in ("practice", "practice-b"):
+elif which in ("practice", "practice-b", "practice-c"):
     blob = (HERE / f"{which}.json").read_text()
 else:
-    sys.exit("which set: practice, practice-b or check")
+    sys.exit("which set: practice, practice-b, practice-c or check")
 cases = json.loads(blob)
 only = set(sys.argv[4].split(",")) if len(sys.argv) > 4 and which != "check" else None
 if only:
