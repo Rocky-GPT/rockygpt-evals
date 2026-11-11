@@ -66,8 +66,10 @@ From the workspace root, against a laptop Brain:
 About $0.10 a run on Luna (60 rows, 86 messages). `rocky bulk` refuses to run if `questions.json`
 no longer matches `questions.sha256`.
 
-**The baseline has not been run.** The OpenAI credit was at $0 on 2026-11-11. Run it once on
-today's bot before step F2, so the before and after can be compared.
+**The baseline has not been run.** It needs a Brain that can use Luna: the laptop Brain, or the
+live site with `--prod`. Cloud threads can reach neither (the proxy blocks the live site), so it
+has to be run from the Mac. Run it once on today's bot before step F2, so the before and after
+can be compared.
 
 ## Grade
 
