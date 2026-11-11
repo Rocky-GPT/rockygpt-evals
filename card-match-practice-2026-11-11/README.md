@@ -36,9 +36,35 @@ with it. It is a practice set: change it or add to it freely.
   near-copy: "how do i get a parking permit" scores 0.905 on two cards. Fewer duplicate cards
   would raise the share more than a looser rule would.
 
+## After near-copies (same day, same release)
+
+The fourth point was fixed without joining more cards. Each card now names its near-copies: the
+cards that pass every join rule at a lower average (0.78 alike, no pair under 0.70), which is
+one task worded apart on two pages. A card no longer has to lead those. Of a card and its
+near-copies within the lead, the page said is the best match's, unless a near-copy is on a page
+that is not old while the best match's is, or on the own page of an office that handles both.
+
+- The rule alone fires on 25 of the 70 how-to questions (14 before, with the cards rebuilt that
+  day) and still on 0 of the 20 look-alikes.
+- Through the whole chat path, code answers 16 of the 70 (10 before) and 0 of the 20. The six
+  new ones: parking permit, change my meal plan, apply for financial aid, campus wifi,
+  emotional support animal, campus tour. Of the other nine, most name a class, a major,
+  credits or an advisor ("how do i withdraw from a class"), so the catalog or people path
+  runs first; the free check refuses that path's AI call, so it cannot show whether the card
+  answers after it. One (scholarships) matches a card that needs a look.
+- Whose page is said was set by reading 51 cases with each candidate's answer side by side.
+  The best match alone gave the weaker page in 4 of 11 practice cases ("connect to the campus
+  wifi" from a 2021 FAQ). The join's finer rules, newest date and most steps, picked wrong
+  pages across cards, so they are not used.
+- Known weak answer: "how do i schedule a campus tour" comes from a page that still mentions
+  COVID-19 guidelines, while a near-copy has the registration link. Both are current
+  Admissions pages.
+
+The `measured` fields in `questions.json` are from the first measurement, before near-copies.
+
 ## Running it
 
-The numbers above cost about $0.0005 in all: the questions were embedded (a hundredth of a cent
+The numbers above cost about $0.001 in all: the questions were embedded (a hundredth of a cent
 per run) and no AI answer was written. A real run writes an AI answer for every question code
 does not answer, about $0.07 for the set:
 
