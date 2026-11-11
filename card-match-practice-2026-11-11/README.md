@@ -48,9 +48,10 @@ that is not old while the best match's is, or on the own page of an office that 
   day) and still on 0 of the 20 look-alikes.
 - Through the whole chat path, code answers 16 of the 70 (10 before) and 0 of the 20. The six
   new ones: parking permit, change my meal plan, apply for financial aid, campus wifi,
-  emotional support animal, campus tour. The other nine name a class or a major ("how do i
-  withdraw from a class"), so the catalog's pick runs first; the free check refuses that AI
-  call, so it cannot show whether the card answers after it.
+  emotional support animal, campus tour. Of the other nine, most name a class, a major,
+  credits or an advisor ("how do i withdraw from a class"), so the catalog or people path
+  runs first; the free check refuses that path's AI call, so it cannot show whether the card
+  answers after it. One (scholarships) matches a card that needs a look.
 - Whose page is said was set by reading 51 cases with each candidate's answer side by side.
   The best match alone gave the weaker page in 4 of 11 practice cases ("connect to the campus
   wifi" from a 2021 FAQ). The join's finer rules, newest date and most steps, picked wrong
