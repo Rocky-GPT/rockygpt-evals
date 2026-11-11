@@ -38,7 +38,7 @@ with it. It is a practice set: change it or add to it freely.
 
 ## Running it
 
-The numbers above cost about $0.0004 in all: the questions were embedded (a hundredth of a cent
+The numbers above cost about $0.0005 in all: the questions were embedded (a hundredth of a cent
 per run) and no AI answer was written. A real run writes an AI answer for every question code
 does not answer, about $0.07 for the set:
 
