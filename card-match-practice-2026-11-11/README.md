@@ -20,6 +20,7 @@ with it. It is a practice set: change it or add to it freely.
 | `measured.rule_fires` | Whether the rule (score 0.80 or more, lead 0.08 or more) fires. |
 | `measured.right_card` | Whether the best card matches `want` (`null` for a look-alike). |
 | `measured.chat` | What the whole chat path did with the cards on: `said` (code answered from the card, no AI call), `not_clear` (no card led), `not_plain` (the question names a class, a program, a person, an event or a club, so another path reads it first), `too_long`, `date_changed`. |
+| `measured.chat_card_first` | The same, measured again after near-copies and after the card was asked before the catalog's pick. Also `needs_look`: the best card is one the rules flagged. |
 
 ## What was measured (dev release v2-20261111174533, 6,459 cards)
 
@@ -60,7 +61,40 @@ that is not old while the best match's is, or on the own page of an office that 
   COVID-19 guidelines, while a near-copy has the registration link. Both are current
   Admissions pages.
 
-The `measured` fields in `questions.json` are from the first measurement, before near-copies.
+The `measured` fields in `questions.json` are from the first measurement, before near-copies,
+except `chat_card_first` (below).
+
+## After asking the card before the catalog (same day, dev release v2-20261111194310)
+
+A how-to question that mentions a class or a major ("how do i withdraw from a class") used to
+go to the catalog's pick first, which is one AI call, and the free check could not see past it.
+The Brain now asks the card first when the question names no program, course, person or club.
+`measured.chat_card_first` is what the whole chat path did with every row after that change.
+
+- Code answers 23 of the 70 how-to questions (16 before) and still 0 of the 20 look-alikes. No
+  answer was lost. The seven new ones: withdraw from a class, declare my major, register for
+  classes, change my major, add a minor, retake a class i failed, transfer credits from another
+  college.
+- `academic-lookalikes.json` has 24 more look-alikes (`cm-acad-01` to `cm-acad-24`), written
+  before any run: questions about classes, credits and majors in general that are no how-to
+  ("how many credits do i need to graduate", "what is academic probation"). Code answers 4 of
+  them; each row's `measured.read` says how the answer read.
+- All 27 answers were read side by side. Good: the first five new ones above, and "how many
+  credits is a full time student" (12 credits, from the orientation FAQ). Thin: "how do i know
+  what classes i still need" says to run a DegreeWorks audit, with no link.
+- Weak, three answers for a group the question did not name, each under its "Who it is for"
+  line: "transfer credits from another college" comes from a card for returning students who
+  took classes elsewhere while away; "do summer classes count toward my gpa" from a card for
+  EOF first-year students; "when do i have to declare a major" from Student Success advice for
+  students who intend to graduate in four years, not the Registrar's 64-credit rule.
+- Weak, one page conflict: "how do i retake a class i failed" says two retakes, from a Student
+  Success FAQ, while the Registrar's page says four. The rules do not compare numbers across
+  cards.
+- The rule cannot see who a card is for. Words alone do not tell "EOF first-year students"
+  from "the vehicle owner or driver" on the parking appeal's card, which answers anyone.
+  Whether a task is for everyone or for a named group is something the build's page read would
+  have to say. With the catalog's pick first, the same weak answers were said whenever the pick
+  named nothing; the new order did not make them.
 
 ## Running it
 
