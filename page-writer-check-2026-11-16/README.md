@@ -38,3 +38,26 @@ SQLite; an answer counts good only when both graders say correct, declined_ok or
 The sections writer does not pass (the plan's bar: more good answers, no area down). It is cheaper,
 faster and makes fewer serious mistakes, but it leaves out facts its pages hold more often
 (incomplete 33 vs 27 on the misses).
+
+## Rerun after the read fix (graded 2026-11-16)
+
+Brain dev 782ca5c: the sections writer now gets each read section from its start (before, a
+section was given from just before its matched piece, which cut the guest limit and the 1098-T
+steps). Same laptop graph and questions; `runs/sections-whole.json`, $0.173, median 14.3 s, 0 errors.
+Graded the same way (writer "whole" in `grading/key.json`, batches 5 and 6). Batches 7 and 8 grade
+tries 2 to 5 of the 11 good answers for today's writer and the fixed writer, mixed and hidden.
+
+| | Today's writer (ai) | Sections, fixed |
+|---|---|---|
+| Older misses, good tries | 51 of 95 | 62 of 95 |
+| Good answers, all 5 tries | 49 of 55 | 42 of 55 |
+| All 150 graded tries | 100 | 104 |
+| Wrong and serious by both graders | 9 | 0 |
+| Cost of 150 answers | $0.37 | $0.17 |
+| Median seconds an answer | 17.5 | 14.3 |
+
+Still short of the bar: the good set is down. Two questions slipped. Campus email and Wi-Fi went
+from 4 of 5 to 0 of 5: the writer gives ResNET MAC-address registration, which is only for devices
+that cannot log in, instead of joining Ramapo-Secure. Adding a parent as an authorized user went
+from 5 of 5 to 2 of 5: the steps are right, but the writer remarks that one page is "older" or
+"updated March 2026", which the graders' 11-02 data cannot support.
