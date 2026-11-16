@@ -19,7 +19,7 @@ with it. It is a practice set: change it or add to it freely.
 | `measured.score`, `lead` | That card's score against the question, and how far it led the next card. |
 | `measured.rule_fires` | Whether the rule (score 0.80 or more, lead 0.08 or more) fires. |
 | `measured.right_card` | Whether the best card matches `want` (`null` for a look-alike). |
-| `measured.chat` | What the whole chat path did with the cards on: `said` (code answered from the card, no AI call), `not_clear` (no card led), `not_plain` (the question names a class, a program, a person, an event or a club, so another path reads it first), `too_long`, `date_changed`. |
+| `measured.chat` | What the whole chat path did with the cards on: `said` (code answered from the card; no pick and no writer call), `not_clear` (no card led), `not_plain` (the question names a class, a program, a person, an event or a club, so another path reads it first), `too_long`, `date_changed`. |
 | `measured.chat_card_first` | The same, measured again after near-copies and after the card was asked before the catalog's pick. Also `needs_look`: the best card is one the rules flagged. |
 
 ## What was measured (dev release v2-20261111174533, 6,459 cards)
@@ -95,6 +95,19 @@ The Brain now asks the card first when the question names no program, course, pe
   Whether a task is for everyone or for a named group is something the build's page read would
   have to say. With the catalog's pick first, the same weak answers were said whenever the pick
   named nothing; the new order did not make them.
+
+## What the blind run showed (2026-11-16)
+
+The numbers above overstate what the cards do for real questions, for two reasons the blind 60
+run made plain (cards on, dev release v2-20261111224857):
+
+- These practice questions were written by the person who built the rule, so they are plain in
+  exactly the way the rule wants: one ask, no class, person or club named. Of the blind set's 15
+  how-to questions, written by people who never saw the rule, 2 reached the cards and 1 was
+  answered from one. A practice set for a gate should come from someone who has not seen the gate.
+- The free checks ran with the Brain's first read of the message switched off, so "no AI call"
+  is wrong for the real bot. A card answer skips the pick and the writer, but the read's three
+  votes still run first: about $0.0002 and 3.7 s an answer in the blind run.
 
 ## Running it
 
