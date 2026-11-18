@@ -27,6 +27,13 @@ function readRows(where) {
   });
 }
 
+// The grader's rubric with this question's key filled in. Filled here because promptfoo does not
+// fill {{ }} in a rubric read from a file (cloud wiring check 11-18: the grader saw the blanks).
+const RUBRIC = fs.readFileSync(new URL('./rubric.txt', import.meta.url), 'utf8');
+function rubricFor(vars) {
+  return RUBRIC.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, name) => String(vars[name] ?? ''));
+}
+
 export default function loadSet() {
   const set = process.env.SET;
   if (!set) throw new Error('Set SET to a question set folder or a keyed .json file.');
@@ -34,13 +41,17 @@ export default function loadSet() {
   const only = new Set((process.env.ONLY ?? '').split(',').map(id => id.trim()).filter(Boolean));
   return rows
     .filter(row => !only.size || only.has(row.id))
-    .map(row => ({
-      description: row.id,
-      vars: {
+    .map(row => {
+      const vars = {
         id: row.id, area: row.area ?? '', kind: row.kind ?? '', question: row.question,
         expected: row.expected ?? '', must_not: row.must_not ?? '',
         status: row.status ?? '', note: row.note ?? '', source: row.source ?? '',
-      },
-      metadata: { id: row.id, area: row.area ?? '', kind: row.kind ?? '' },
-    }));
+      };
+      return {
+        description: row.id,
+        vars,
+        assert: [{ type: 'llm-rubric', value: rubricFor(vars) }],
+        metadata: { id: row.id, area: row.area ?? '', kind: row.kind ?? '' },
+      };
+    });
 }

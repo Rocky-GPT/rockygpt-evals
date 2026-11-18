@@ -43,6 +43,10 @@ OLD_BRAIN_URL=http://127.0.0.1:8201 NEW_BRAIN_URL=http://127.0.0.1:8202 SET=$PWD
 python3 paired.py /tmp/dry.json
 ```
 
+To see exactly what the grader is sent, use `--grader file://dry-run/show-grader-prompt.mjs` with
+`SHOW_PROMPTS=/tmp/prompts.txt`: every rubric must show the question and its key, with no `{{`.
+(promptfoo does not fill `{{ }}` in a rubric read from a file, so `load-set.mjs` fills it.)
+
 ## Not covered
 
 The steady ruler's own rules: rebuild its `run_day` keys on the day of the run, and grade with two
