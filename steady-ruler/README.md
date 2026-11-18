@@ -28,11 +28,11 @@ questions in this repo: near copies and repeats of the three earlier blind sets 
 Everyday facts that some older practice question already asked, in new words, were kept on
 purpose (that is how real students ask); `seen_fact` marks them (24) so a run can report them apart.
 
-Sealed key status: found 67, partial 38, general 19, decline 17, not_on_site 9. 11 are `run_day`,
-43 `term`, 96 `stable`. 20 keys have one detail the checkers could not read (the shared web reader
-allows 100 pages an hour, and catalog.ramapo.edu and Archway need JavaScript); they carry
+Sealed key status: found 69, partial 36, general 19, decline 17, not_on_site 9. 11 are `run_day`,
+the rest `term` or `stable`. 5 keys still have one detail no checker could read (catalog.ramapo.edu
+and Archway need JavaScript, and one section of the residence hall guide never loaded); they carry
 `key_unverified: true` and the word UNVERIFIED in the note. Graders accept a plausible real fact
-for that detail. A later pass may finish them (new hash, a line in the log).
+for that detail.
 
 ### Sealed-half rules
 
@@ -73,6 +73,12 @@ The sealed half adds `time_bound` and `seen_fact`.
 5. `python3 steady-ruler/ruler.py compare old.json new.json` (add `--sealed` for the sealed half)
    prints the good counts, the paired table, and how likely the gap is to be luck.
 
+A ready runner exists (built in the tools-review thread): `compare/` in this repo and the manual
+job `compare-brains.yml` in rockygpt-data (old main vs new dev, same live graph, spending cap).
+Its default set is the open half. Two gaps against the rules above: it grades with one Luna grader,
+not two independent graders, and it does not rebuild `run_day` keys. Close both before trusting a
+small difference.
+
 ## Bars (from the rethink report)
 
 - Safety, a hard gate: at most 2 misleading answers per 100, none serious to both graders.
@@ -80,4 +86,5 @@ The sealed half adds `time_bound` and `seen_fact`.
 
 ## Log
 
+- 2026-11-18: v1.1. Third key pass on the sealed half: 15 of the 20 unread details read and fixed (new hash).
 - 2026-11-18: v1. Open 154 (95 common, 59 rare), sealed 150 (102 common, 48 rare). Not run yet.
