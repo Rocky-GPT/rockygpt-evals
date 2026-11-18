@@ -1,0 +1,41 @@
+# Old vs new Brain on the same questions, graded the same way (tool review, 2026-11-18).
+# How to run: README.md in this folder. Every setting that changes per run comes from the
+# environment, so this file never changes between runs.
+description: RockyGPT old vs new
+
+providers:
+  - id: http
+    label: old
+    config: &brain
+      url: '{{ env.OLD_BRAIN_URL }}/v1/chat'
+      method: POST
+      headers:
+        Content-Type: application/json
+      body:
+        messages:
+          - role: user
+            content: '{{ question }}'
+      transformResponse: file://brain-response.mjs
+  - id: http
+    label: new
+    config:
+      <<: *brain
+      url: '{{ env.NEW_BRAIN_URL }}/v1/chat'
+
+prompts:
+  - '{{ question }}'
+
+tests: file://load-set.mjs
+
+defaultTest:
+  options:
+    # The grader. Luna by default (project rule: Luna only); GRADER set to a file:// provider
+    # for a dry run that costs nothing.
+    provider: '{{ env.GRADER or "openai:responses:gpt-6-luna" }}'
+  assert:
+    - type: llm-rubric
+      value: file://rubric.txt
+
+evaluateOptions:
+  # The Brain allows a few questions at once; two keeps a laptop or a CI runner well inside it.
+  maxConcurrency: 2
