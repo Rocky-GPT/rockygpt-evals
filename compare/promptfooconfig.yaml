@@ -29,9 +29,9 @@ tests: file://load-set.mjs
 
 defaultTest:
   options:
-    # The grader. Luna by default (project rule: Luna only); GRADER set to a file:// provider
-    # for a dry run that costs nothing.
-    provider: '{{ env.GRADER or "openai:responses:gpt-6-luna" }}'
+    # The grader: Luna (project rule: Luna only). A dry run that costs nothing swaps it with
+    # `promptfoo eval --grader file://dry-run/fake-grader.mjs` (README.md).
+    provider: openai:responses:gpt-6-luna
   assert:
     - type: llm-rubric
       value: file://rubric.txt
