@@ -17,7 +17,7 @@ Brain with its trusted database connection first. The runner needs only the Brai
 it does not read service credentials or import either implementation.
 
 The harness's own tests include the evidence-gate checker's, which import the Brain and
-use pytest, so run them with the Brain's virtualenv (`npm run test:brain:harness`). Plain
+use pytest, so run them with the Brain's virtualenv (`../rockygpt-brain/.venv/bin/python -m pytest -q brain-reset`). Plain
 `python3 -m unittest` skips those three and fails without pytest (09-29).
 
 ```sh
@@ -86,23 +86,9 @@ an attempted fresh full sweep was blocked by exhausted API credits.
 [Independent agent review](brain-reset/verification-review.md) is recorded
 separately from machine results. Human review remains pending.
 
-## Historical suites
+## Retired suites
 
-The TypeScript suites and `corpus/` reports predate the Brain restart and remain
-as historical artifacts. Their routing, state, and answer-shape expectations are
-not the acceptance criteria for the rebuilt Brain. Their existing npm commands
-are retained for deliberate historical comparisons.
-
-## Grading with Jev
-
-In the TypeScript suites and `corpus/`, checks that ask what an answer *claims*
-(open or closed right now, no more shuttles today, a fact held back, a denial of
-something never said) are read by Jev, TypeSafe's classifier, when
-`TYPESAFE_API_KEY` (or the Brain's `BRAIN_TYPESAFE_API_KEY`) is set. A run of
-about 120 answers costs about a cent.
-
-Jev only decides when it is at least 90% sure. Without a key, when a call
-fails, or when Jev is unsure, the old word check decides, exactly as before.
-Suites that use it print who graded what and what Jev cost, and the corpus
-results file stores both verdicts beside every answer, so a disagreement can be
-read rather than trusted. `npm run test:unit` tests the grader against a fake Jev.
+The TypeScript suites and their `corpus/` reports were removed on 2026-11-17 (audit plan item 19).
+They tested the Brain from before its restart and a data API that no longer exists, and nothing
+ran them after September 27. They stay in git history before that date if an old comparison is ever
+needed.
