@@ -44,6 +44,7 @@ def rows(results: dict[str, Any]) -> list[dict[str, Any]]:
 def tally(results: dict[str, Any], old: str, new: str) -> dict[str, Any]:
     tries: dict[tuple[str, str], list[bool]] = defaultdict(list)
     area: dict[str, str] = {}
+    kind: dict[str, str] = {}
     for row in rows(results):
         side = (row.get("provider") or {}).get("label") or (row.get("provider") or {}).get("id")
         test = row.get("testCase") or {}
@@ -51,6 +52,7 @@ def tally(results: dict[str, Any], old: str, new: str) -> dict[str, Any]:
         if side not in (old, new) or not qid:
             continue
         area[qid] = (test.get("vars") or {}).get("area") or "all"
+        kind[qid] = (test.get("vars") or {}).get("kind") or ""
         tries[(qid, side)].append(bool(row.get("success")))
 
     def gets(qid: str, side: str) -> bool | None:
@@ -66,10 +68,11 @@ def tally(results: dict[str, Any], old: str, new: str) -> dict[str, Any]:
             missing.append(qid)
             continue
         cell = "both" if o and n else "only_old" if o else "only_new" if n else "neither"
-        for name in (area[qid], "ALL"):
+        # Sets that mark common vs rare questions (the steady ruler) also get a row for each kind.
+        for name in (area[qid], *([f"kind:{kind[qid]}"] if kind[qid] else []), "ALL"):
             groups[name][cell] += 1
     summary: dict[str, Any] = {"old": old, "new": new, "missing": missing, "areas": {}}
-    for name, g in sorted(groups.items(), key=lambda item: (item[0] == "ALL", item[0])):
+    for name, g in sorted(groups.items(), key=lambda item: (item[0] == "ALL", item[0].startswith("kind:"), item[0])):
         total = sum(g.values())
         summary["areas"][name] = {**g, "questions": total,
                                   "old_right": g["both"] + g["only_old"],
