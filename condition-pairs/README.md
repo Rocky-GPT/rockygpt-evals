@@ -19,3 +19,7 @@ answer must say none).
 
 These questions are open (not the sealed steady ruler). Do not tune code to their words: the
 fix is the record of conditions, not word rules.
+- `wider-40.json` (Step 3, 2026-11-19): 40 groups, 83 versions on hours, shuttle, menus,
+  academic dates and people (8 each), from a third blind writer that saw only
+  `WRITER-BRIEF-wider.md`. Checked by flags (topic, time picks, condition said back, pairs
+  differ), then read by hand; counts only.
