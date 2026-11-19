@@ -43,17 +43,30 @@ def rows(results: dict[str, Any]) -> list[dict[str, Any]]:
 
 def tally(results: dict[str, Any], old: str, new: str) -> dict[str, Any]:
     tries: dict[tuple[str, str], list[bool]] = defaultdict(list)
+    grades: dict[tuple[str, str, str], bool] = {}
+    conflicts: set[str] = set()
     area: dict[str, str] = {}
     kind: dict[str, str] = {}
     for row in rows(results):
         side = (row.get("provider") or {}).get("label") or (row.get("provider") or {}).get("id")
         test = row.get("testCase") or {}
-        qid = (test.get("vars") or row.get("vars") or {}).get("id") or test.get("description")
+        variables = test.get("vars") or row.get("vars") or {}
+        qid = variables.get("id") or test.get("description")
         if side not in (old, new) or not qid:
             continue
         area[qid] = (test.get("vars") or {}).get("area") or "all"
         kind[qid] = (test.get("vars") or {}).get("kind") or ""
-        tries[(qid, side)].append(bool(row.get("success")))
+        passed = bool(row.get("success"))
+        tries[(qid, side)].append(passed)
+        # Older runs and external graders may grade each copy separately. Compare exactly
+        # what the grader saw, including the cited pages and the test's grading criteria.
+        response = row.get("response") or {}
+        answer = response.get("output")
+        if isinstance(answer, str) and answer.strip() and not response.get("error"):
+            criteria = json.dumps([variables, test.get("assert"), test.get("options")], sort_keys=True)
+            key = (qid, criteria, answer)
+            if grades.setdefault(key, passed) != passed:
+                conflicts.add(qid)
 
     def gets(qid: str, side: str) -> bool | None:
         got = tries.get((qid, side))
@@ -62,16 +75,21 @@ def tally(results: dict[str, Any], old: str, new: str) -> dict[str, Any]:
     groups: dict[str, dict[str, int]] = defaultdict(lambda: {"both": 0, "only_old": 0,
                                                               "only_new": 0, "neither": 0})
     missing = []
+    disputed = []
     for qid in sorted(area):
         o, n = gets(qid, old), gets(qid, new)
         if o is None or n is None:
             missing.append(qid)
             continue
+        if qid in conflicts:
+            disputed.append(qid)
+            continue
         cell = "both" if o and n else "only_old" if o else "only_new" if n else "neither"
         # Sets that mark common vs rare questions (the steady ruler) also get a row for each kind.
         for name in (area[qid], *([f"kind:{kind[qid]}"] if kind[qid] else []), "ALL"):
             groups[name][cell] += 1
-    summary: dict[str, Any] = {"old": old, "new": new, "missing": missing, "areas": {}}
+    summary: dict[str, Any] = {"old": old, "new": new, "missing": missing, "disputed": disputed,
+                               "areas": {}}
     for name, g in sorted(groups.items(), key=lambda item: (item[0] == "ALL", item[0].startswith("kind:"), item[0])):
         total = sum(g.values())
         summary["areas"][name] = {**g, "questions": total,
@@ -94,6 +112,9 @@ def report(summary: dict[str, Any]) -> str:
         lines.append(f"\nNew vs old: {change:+d} of {every['questions']} questions, {verdict}.")
     if summary["missing"]:
         lines.append(f"Not answered by both sides, left out: {', '.join(summary['missing'])}")
+    if summary.get("disputed"):
+        lines.append("Excluded from both scores because identical answers received conflicting "
+                     f"grades on {', '.join(summary['disputed'])}.")
     return "\n".join(lines)
 
 
