@@ -86,5 +86,6 @@ small difference.
 
 ## Log
 
+- 2026-11-19: run_day keys rebuilt for a run that day: `open/rekeyed/open-half-2026-11-19.json` (own hash). 5 of the 13 changed (o18-ec-01, o18-ec-04, o18b-ec-01, o18b-ec-05, o18b-pp-14), from the Archway feeds read that morning. The other 8 name dates that are still ahead and were left as keyed on 11-18 (same week, not re-read). The 8 seasonal ones are in season. The frozen `open-half.json` is unchanged.
 - 2026-11-18: v1.1. Third key pass on the sealed half: 15 of the 20 unread details read and fixed (new hash).
 - 2026-11-18: v1. Open 154 (95 common, 59 rare), sealed 150 (102 common, 48 rare). Not run yet.
